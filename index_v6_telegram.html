@@ -375,12 +375,24 @@ body{
 </div>
 
 <script>
-const gameUrl = "https://delaydoge-game.onrender.com";
+const API_BASE = window.location.origin;
+const gameUrl = "https://delaydoge-app.onrender.com";
 const telegramUrl = "https://t.me/DelayDogeHQ";
 const pumpUrl = "https://pump.fun/coin/FX5vX7PhceRzsGgCAh6sWawR7P5h9QbcpUd9PFGcpump";
 
-// Local when testing on your laptop, same domain when deployed on Render
-const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "";
+const tg = window.Telegram?.WebApp || null;
+if (tg) { tg.ready(); tg.expand(); }
+const tgUser = tg?.initDataUnsafe?.user || null;
+const referralCode = tg?.initDataUnsafe?.start_param || new URLSearchParams(window.location.search).get("ref") || null;
+
+let userId = localStorage.getItem("dd_user_id");
+if (tgUser?.id) {
+  userId = "tg_" + tgUser.id;
+  localStorage.setItem("dd_user_id", userId);
+} else if (!userId) {
+  userId = "dd_" + Math.random().toString(36).substring(2,10);
+  localStorage.setItem("dd_user_id", userId);
+}
 
 let coins = Number(localStorage.getItem("dd_coins")) || 0;
 let xp = Number(localStorage.getItem("dd_xp")) || 0;
@@ -390,14 +402,7 @@ let energy = Number(localStorage.getItem("dd_energy")) || 100;
 let lastTapTime = Number(localStorage.getItem("dd_last_tap_time")) || 0;
 let combo = 1;
 let previousRank = localStorage.getItem("dd_rank") || "Rookie";
-let userId = localStorage.getItem("dd_user_id");
 let saveTimer = null;
-let isCloudReady = false;
-
-if(!userId){
-  userId = "dd_" + Math.random().toString(36).substring(2,10);
-  localStorage.setItem("dd_user_id", userId);
-}
 
 const statuses = [
   "Package moved 2 meters. Bullish 📦",
@@ -426,69 +431,84 @@ const feedItems = [
   "Sara claimed 7-day streak reward 🎁"
 ];
 
-function currentPlayer(){
-  return {
-    userId,
-    coins,
-    xp,
-    taps,
-    streak,
-    energy,
-    rank: getRank()
-  };
+async function api(path, options = {}) {
+  const res = await fetch(API_BASE + path, {
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options
+  });
+  return res.json();
 }
 
-function saveLocal(){
+function getTelegramProfile(){
+  return tgUser ? {
+    id: tgUser.id,
+    username: tgUser.username || "",
+    first_name: tgUser.first_name || "",
+    last_name: tgUser.last_name || "",
+    language_code: tgUser.language_code || "",
+    photo_url: tgUser.photo_url || ""
+  } : null;
+}
+
+function playerPayload(){
+  return { userId, coins, xp, taps, streak, energy, rank:getRank(), telegram:getTelegramProfile() };
+}
+
+async function loginUser(){
+  try {
+    const result = await api("/auth/telegram", {
+      method:"POST",
+      body: JSON.stringify({
+        initData: tg?.initData || "",
+        user: tgUser,
+        fallbackUserId: userId,
+        referralCode
+      })
+    });
+    if(result.success && result.player){
+      applyPlayer(result.player);
+      showPopup(tgUser?.first_name ? "Welcome " + tgUser.first_name + " 🐶" : "Welcome back 🐶");
+    } else {
+      await syncSaveNow();
+    }
+    await loadLeaderboard();
+  } catch(err){
+    console.warn("Login failed:", err);
+    showPopup("Offline mode");
+  }
+  refresh();
+}
+
+function applyPlayer(player){
+  coins = Number(player.coins) || 0;
+  xp = Number(player.xp) || 0;
+  taps = Number(player.taps) || 0;
+  streak = Number(player.streak) || 0;
+  energy = Number(player.energy);
+  if(!Number.isFinite(energy)) energy = 100;
+  previousRank = player.rank || getRank();
+  saveLocalOnly();
+}
+
+function saveLocalOnly(){
   localStorage.setItem("dd_coins", coins);
   localStorage.setItem("dd_xp", xp);
   localStorage.setItem("dd_taps", taps);
   localStorage.setItem("dd_streak", streak);
   localStorage.setItem("dd_energy", energy);
   localStorage.setItem("dd_rank", getRank());
-}
-
-async function saveCloud(){
-  try{
-    await fetch(API_BASE + "/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(currentPlayer())
-    });
-    isCloudReady = true;
-  }catch(err){
-    console.warn("Cloud save failed:", err.message);
-  }
+  localStorage.setItem("dd_last_tap_time", lastTapTime);
 }
 
 function save(){
-  saveLocal();
+  saveLocalOnly();
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveCloud, 350);
+  saveTimer = setTimeout(syncSaveNow, 700);
 }
 
-async function loadPlayer(){
-  try{
-    const res = await fetch(API_BASE + "/player/" + encodeURIComponent(userId));
-    const data = await res.json();
-
-    if(data.success && data.player){
-      const p = data.player;
-      coins = Number(p.coins) || 0;
-      xp = Number(p.xp) || 0;
-      taps = Number(p.taps) || 0;
-      streak = Number(p.streak) || 0;
-      energy = Number(p.energy) || 100;
-      previousRank = p.rank || getRank();
-      isCloudReady = true;
-      saveLocal();
-    }else{
-      await saveCloud();
-    }
-  }catch(err){
-    console.warn("Player load failed, using local data:", err.message);
-  }
-  refresh();
-  loadLeaderboard();
+async function syncSaveNow(){
+  try { await api("/save", { method:"POST", body: JSON.stringify(playerPayload()) }); }
+  catch(err){ console.warn("Save failed:", err); }
 }
 
 function refresh(){
@@ -497,18 +517,19 @@ function refresh(){
   document.getElementById("taps").innerText = taps;
   document.getElementById("streak").innerText = streak;
   document.getElementById("energyText").innerText = energy + "/100";
-  document.getElementById("energyFill").style.width = energy + "%";
-  document.getElementById("inviteLink").innerText = gameUrl + "?ref=" + userId;
-
+  document.getElementById("energyFill").style.width = Math.max(0, Math.min(100, energy)) + "%";
+  document.getElementById("inviteLink").innerText = getInviteLink();
   const rank = getRank();
   document.getElementById("rank").innerText = rank;
-
   if(rank !== previousRank){
     showRankFlash(rank);
     previousRank = rank;
     localStorage.setItem("dd_rank", rank);
-    save();
   }
+}
+
+function getInviteLink(){
+  return "https://t.me/DelayDogeGameBot?start=" + encodeURIComponent(userId);
 }
 
 function getRank(){
@@ -525,46 +546,26 @@ function tapDeliver(e){
     document.getElementById("status").innerText = "Energy empty. Come back soon or claim rewards ⚡";
     return;
   }
-
   const now = Date.now();
-  if(now - lastTapTime < 650){
-    combo = Math.min(combo + 1, 5);
-  } else {
-    combo = 1;
-  }
+  combo = (now - lastTapTime < 650) ? Math.min(combo + 1, 5) : 1;
   lastTapTime = now;
-  localStorage.setItem("dd_last_tap_time", lastTapTime);
-
   const gainedCoins = combo;
   const gainedXp = combo * 2;
-
   coins += gainedCoins;
   xp += gainedXp;
   taps += 1;
   energy -= 1;
-
   document.getElementById("comboText").innerText = "Combo: x" + combo;
-
-  const status = statuses[Math.floor(Math.random()*statuses.length)];
-  document.getElementById("status").innerText = status;
-
+  document.getElementById("status").innerText = statuses[Math.floor(Math.random()*statuses.length)];
   createFloatingText(e, "+" + gainedCoins);
-
   if(Math.random() < 0.025){
     coins += 500;
     xp += 300;
     showPopup("🍀 LUCKY TAP +500!");
     document.getElementById("status").innerText = "JACKPOT! Your package escaped the warehouse 🍀";
   }
-
-  if(taps % 25 === 0){
-    openLootBox();
-  } else {
-    showPopup("+" + gainedCoins + " Delay Point");
-  }
-
-  if(navigator.vibrate){ navigator.vibrate(35); }
-
+  if(taps % 25 === 0) openLootBox(); else showPopup("+" + gainedCoins + " Delay Point");
+  if(navigator.vibrate) navigator.vibrate(35);
   save();
   refresh();
 }
@@ -574,14 +575,11 @@ function createFloatingText(e, text){
   const float = document.createElement("div");
   float.className = "float";
   float.innerText = text;
-
   const rect = card.getBoundingClientRect();
   const x = e.clientX ? e.clientX - rect.left : rect.width/2;
   const y = e.clientY ? e.clientY - rect.top : 160;
-
   float.style.left = x + "px";
   float.style.top = y + "px";
-
   card.appendChild(float);
   setTimeout(()=>float.remove(),800);
 }
@@ -593,28 +591,21 @@ function openLootBox(){
     {text:"Rare Delay: +150 Points", coins:150, xp:80},
     {text:"Legendary Package: +300 Points", coins:300, xp:150}
   ];
-
   const reward = rewards[Math.floor(Math.random()*rewards.length)];
   coins += reward.coins;
   xp += reward.xp;
-
   document.getElementById("lootReward").innerText = reward.text;
   document.getElementById("lootOverlay").style.display = "flex";
-
   save();
   refresh();
 }
 
-function closeLoot(){
-  document.getElementById("lootOverlay").style.display = "none";
-}
-
+function closeLoot(){ document.getElementById("lootOverlay").style.display = "none"; }
 function showRankFlash(rank){
   document.getElementById("rankFlashText").innerHTML = "NEW RANK<br>" + rank + " 🔥";
   document.getElementById("rankFlash").style.display = "flex";
   setTimeout(()=>document.getElementById("rankFlash").style.display = "none",1600);
 }
-
 function showPopup(text){
   const popup = document.getElementById("popup");
   popup.innerText = text;
@@ -623,64 +614,33 @@ function showPopup(text){
 }
 
 async function dailyReward(){
-  try{
-    const res = await fetch(API_BASE + "/daily-reward", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId })
-    });
-    const data = await res.json();
-
-    if(!data.success){
-      showPopup(data.alreadyClaimed ? "Already claimed today 📦" : "Reward failed");
-      return;
-    }
-
-    if(data.player){
-      coins = Number(data.player.coins) || coins;
-      xp = Number(data.player.xp) || xp;
-      taps = Number(data.player.taps) || taps;
-      streak = Number(data.player.streak) || streak;
-      energy = Number(data.player.energy) || 100;
-    }
-
+  try {
+    const result = await api("/daily-reward", { method:"POST", body: JSON.stringify({ userId }) });
+    if(!result.success){ showPopup(result.message || "Already claimed today 📦"); return; }
+    if(result.player) applyPlayer(result.player);
     document.getElementById("status").innerText = "Daily reward claimed. Energy restored ⚡";
-    showPopup("Daily Reward +" + data.reward + " 🎁");
-    saveLocal();
+    showPopup("Daily Reward +" + result.reward + " 🎁");
     refresh();
-    loadLeaderboard();
-  }catch(err){
-    showPopup("Cloud reward offline ⚠️");
-    console.warn(err);
-  }
+    await loadLeaderboard();
+  } catch(err){ showPopup("Daily reward failed"); }
 }
 
 function claimTapTask(){
   const today = new Date().toDateString();
   const claimed = localStorage.getItem("dd_tap_task");
-
-  if(claimed === today){
-    showPopup("Task already claimed");
-    return;
-  }
-
-  if(taps < 50){
-    showPopup("Need 50 total taps");
-    return;
-  }
-
+  if(claimed === today){ showPopup("Task already claimed"); return; }
+  if(taps < 50){ showPopup("Need 50 total taps"); return; }
   coins += 100;
   xp += 150;
   localStorage.setItem("dd_tap_task", today);
   showPopup("Task Complete +100 🎉");
   save();
   refresh();
-  loadLeaderboard();
 }
 
-function copyInvite(){
-  const link = gameUrl + "?ref=" + userId;
-  navigator.clipboard.writeText(link);
+async function copyInvite(){
+  const link = getInviteLink();
+  await navigator.clipboard.writeText(link);
   coins += 10;
   xp += 20;
   showPopup("Invite copied +10 🔗");
@@ -689,23 +649,19 @@ function copyInvite(){
 }
 
 function shareTelegram(){
-  const text = encodeURIComponent(
-    "I’m playing DelayDoge 🐶📦\nTap to deliver. Earn the meme.\n\n" + gameUrl
-  );
-  window.open("https://t.me/share/url?url=" + encodeURIComponent(gameUrl) + "&text=" + text, "_blank");
+  const link = getInviteLink();
+  const text = encodeURIComponent("I’m playing DelayDoge 🐶📦
+Tap to deliver. Earn the meme.
+
+" + link);
+  window.open("https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + text, "_blank");
   coins += 15;
   xp += 25;
   save();
   refresh();
 }
-
-function joinHQ(){
-  window.open(telegramUrl, "_blank");
-}
-
-function viewToken(){
-  window.open(pumpUrl, "_blank");
-}
+function joinHQ(){ window.open(telegramUrl, "_blank"); }
+function viewToken(){ window.open(pumpUrl, "_blank"); }
 
 function showPage(page){
   const pages = ["home","tasks","invite","wallet"];
@@ -715,28 +671,20 @@ function showPage(page){
   });
   document.getElementById(page+"Page").classList.remove("hidden");
   document.getElementById("nav"+capitalize(page)).classList.add("active");
-
   if(page === "home") loadLeaderboard();
 }
-
-function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 
 async function loadLeaderboard(){
-  try{
-    const res = await fetch(API_BASE + "/leaderboard");
-    const data = await res.json();
-
-    if(!data.success || !Array.isArray(data.leaderboard)) return;
-
-    const top = data.leaderboard.slice(0,5).map((p, i)=>{
-      const name = p.userId === userId ? "You" : "Doge " + String(p.userId || "").slice(-4);
-      return `${i+1}. ${name} — ${Number(p.coins || 0)} pts`;
+  try {
+    const result = await api("/leaderboard");
+    if(!result.success || !Array.isArray(result.leaderboard)) return;
+    const rows = result.leaderboard.slice(0,5).map((p,i)=>{
+      const name = p.telegram?.username ? "@"+p.telegram.username : (p.telegram?.first_name || p.userId.slice(0,8));
+      return `${i+1}. ${name} — ${p.coins || 0} pts`;
     });
-
-    if(top.length){
-      document.getElementById("feed").innerHTML = "🏆 Global Leaderboard<br>" + top.join("<br>");
-    }
-  }catch(err){
+    document.getElementById("feed").innerHTML = rows.length ? rows.join("<br>") : feedItems.slice(0,3).join("<br>");
+  } catch(err){
     const a = feedItems[Math.floor(Math.random()*feedItems.length)];
     const b = feedItems[Math.floor(Math.random()*feedItems.length)];
     const c = feedItems[Math.floor(Math.random()*feedItems.length)];
@@ -745,19 +693,12 @@ async function loadLeaderboard(){
 }
 
 setInterval(()=>{
-  if(energy < 100){
-    energy += 1;
-    save();
-    refresh();
-  }
+  if(energy < 100){ energy += 1; save(); refresh(); }
 }, 5000);
+setInterval(loadLeaderboard, 10000);
 
-setInterval(()=>{
-  loadLeaderboard();
-}, 12000);
-
-loadPlayer();
 refresh();
+loginUser();
 </script>
 
 </body>
