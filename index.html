@@ -4,35 +4,28 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>DelayDoge V7</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
 body{
-  min-height:100vh;
-  background:linear-gradient(180deg,#050814,#101b33,#070b18);
-  color:white;
-  display:flex;
-  justify-content:center;
-  padding:14px;
-  overflow-x:hidden;
+  min-height:100vh;background:linear-gradient(180deg,#050814,#101b33,#070b18);
+  color:white;display:flex;justify-content:center;padding:14px;overflow-x:hidden;
 }
 .app{width:100%;max-width:430px;padding-bottom:90px}
 .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .brand{font-weight:900;color:#f7c843;font-size:19px}
 .rank{background:#203869;padding:8px 13px;border-radius:999px;font-size:13px;font-weight:900}
-.balance{background:#0f1b33;border:1px solid #2b4376;border-radius:24px;padding:16px;text-align:center;margin-bottom:14px}
+.balance,.game-card,.section{background:#0f1b33;border:1px solid #2b4376}
+.balance{border-radius:24px;padding:16px;text-align:center;margin-bottom:14px}
 .label{color:#9fb4ef;font-size:13px;margin-bottom:5px}
 .coins{font-size:40px;font-weight:900;color:#f7c843}
 .sub{font-size:13px;color:#cbd8ff;margin-top:5px}
-.game-card{
-  background:#0f1b33;border:1px solid #2b4376;border-radius:30px;padding:20px;
-  box-shadow:0 0 35px rgba(0,0,0,.45);text-align:center;position:relative;overflow:hidden;
-}
+.game-card{border-radius:30px;padding:20px;box-shadow:0 0 35px rgba(0,0,0,.45);text-align:center;position:relative;overflow:hidden}
 .mascot{
   width:210px;height:210px;border-radius:50%;margin:8px auto 18px;
-  background:radial-gradient(circle,#f7c843,#d88922);
-  display:flex;align-items:center;justify-content:center;font-size:95px;
-  border:6px solid #203869;box-shadow:0 0 35px rgba(247,200,67,.28);
+  background:radial-gradient(circle,#f7c843,#d88922);display:flex;align-items:center;justify-content:center;
+  font-size:95px;border:6px solid #203869;box-shadow:0 0 35px rgba(247,200,67,.28);
   user-select:none;cursor:pointer;touch-action:manipulation;
 }
 .mascot:active{transform:scale(.94)}
@@ -51,12 +44,9 @@ body{
 .box{background:#081125;border:1px solid #2b4376;border-radius:17px;padding:12px 8px}
 .box .small{font-size:11px;color:#9fb4ef;margin-bottom:5px}
 .box .num{font-size:18px;font-weight:900}
-.section{margin-top:14px;background:#0f1b33;border:1px solid #2b4376;border-radius:24px;padding:16px}
+.section{margin-top:14px;border-radius:24px;padding:16px}
 .section h3{font-size:17px;color:#f7c843;margin-bottom:10px}
-.task{
-  display:flex;justify-content:space-between;align-items:center;background:#081125;
-  border:1px solid #2b4376;padding:12px;border-radius:15px;margin-bottom:9px;
-}
+.task{display:flex;justify-content:space-between;align-items:center;background:#081125;border:1px solid #2b4376;padding:12px;border-radius:15px;margin-bottom:9px}
 .task span{font-size:14px}
 .btn{border:none;padding:10px 12px;border-radius:12px;background:#f7c843;color:#07101f;font-weight:900;cursor:pointer;touch-action:manipulation}
 .btn.dark{background:#203869;color:#fff}
@@ -68,55 +58,27 @@ body{
   gap:8px;background:#0b1326;border:1px solid #2b4376;padding:8px;border-radius:22px;
   box-shadow:0 0 25px rgba(0,0,0,.45);z-index:60;
 }
-.nav button{
-  border:none;background:#111f3f;color:white;border-radius:15px;padding:10px 4px;
-  font-size:12px;font-weight:900;touch-action:manipulation;
-}
+.nav button{border:none;background:#111f3f;color:white;border-radius:15px;padding:10px 4px;font-size:12px;font-weight:900;touch-action:manipulation}
 .nav button.active{background:#f7c843;color:#07101f}
 .hidden{display:none}
-.invite-link{
-  font-size:12px;color:#cbd8ff;word-break:break-all;background:#081125;
-  border:1px solid #2b4376;border-radius:14px;padding:10px;margin-top:8px;
-}
+.invite-link{font-size:12px;color:#cbd8ff;word-break:break-all;background:#081125;border:1px solid #2b4376;border-radius:14px;padding:10px;margin-top:8px}
 .popup{
   position:fixed;top:18px;left:50%;transform:translateX(-50%);
   background:#f7c843;color:#07101f;padding:12px 18px;border-radius:999px;
   font-weight:900;opacity:0;pointer-events:none;transition:.25s;z-index:99;
 }
 .popup.show{opacity:1;top:28px}
-.float{
-  position:absolute;color:#f7c843;font-weight:900;font-size:22px;
-  pointer-events:none;animation:floatUp .8s ease-out forwards;
-}
-@keyframes floatUp{
-  from{opacity:1;transform:translateY(0) scale(1)}
-  to{opacity:0;transform:translateY(-70px) scale(1.35)}
-}
-.loot-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;
-  align-items:center;justify-content:center;z-index:120;padding:20px;
-}
-.loot-box{
-  width:100%;max-width:360px;background:#0f1b33;border:2px solid #f7c843;
-  border-radius:28px;padding:28px 20px;text-align:center;
-  box-shadow:0 0 40px rgba(247,200,67,.35);
-}
+.float{position:absolute;color:#f7c843;font-weight:900;font-size:22px;pointer-events:none;animation:floatUp .8s ease-out forwards}
+@keyframes floatUp{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-70px) scale(1.35)}}
+.loot-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:120;padding:20px}
+.loot-box{width:100%;max-width:360px;background:#0f1b33;border:2px solid #f7c843;border-radius:28px;padding:28px 20px;text-align:center;box-shadow:0 0 40px rgba(247,200,67,.35)}
 .loot-icon{font-size:80px;margin-bottom:12px}
 .loot-title{font-size:28px;color:#f7c843;font-weight:900;margin-bottom:10px}
 .loot-reward{font-size:18px;color:#fff;margin-bottom:18px;line-height:1.5}
-.rank-flash{
-  position:fixed;inset:0;background:rgba(247,200,67,.92);color:#07101f;
-  display:none;align-items:center;justify-content:center;text-align:center;
-  z-index:130;padding:30px;font-weight:900;
-}
+.rank-flash{position:fixed;inset:0;background:rgba(247,200,67,.92);color:#07101f;display:none;align-items:center;justify-content:center;text-align:center;z-index:130;padding:30px;font-weight:900}
 .rank-flash div{font-size:34px;line-height:1.3}
-.telegram-only{
-  min-height:100vh;width:100%;max-width:430px;display:none;
-  align-items:center;justify-content:center;text-align:center;padding:24px;
-}
-.telegram-only-card{
-  background:#0f1b33;border:1px solid #2b4376;border-radius:28px;padding:24px;
-}
+.telegram-only{min-height:100vh;width:100%;max-width:430px;display:none;align-items:center;justify-content:center;text-align:center;padding:24px}
+.telegram-only-card{background:#0f1b33;border:1px solid #2b4376;border-radius:28px;padding:24px}
 .telegram-only-card h2{color:#f7c843;margin-bottom:10px}
 .telegram-only-card p{color:#cbd8ff;line-height:1.6;font-size:15px}
 .avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px}
@@ -129,9 +91,9 @@ body{
   <div class="telegram-only-card">
     <h2>🐶 Open from Telegram</h2>
     <p>
-      To save your Delay Points correctly, open DelayDoge from the Telegram Mini App button.
+      افتح اللعبة من زر تيليجرام الرسمي داخل البوت.
       <br><br>
-      This prevents duplicate accounts and keeps your points synced.
+      هذا يحفظ نقاطك بنفس الحساب ويمنع تكرار الحسابات.
     </p>
   </div>
 </div>
@@ -152,7 +114,6 @@ body{
 </div>
 
 <div class="app" id="app">
-
   <div class="header">
     <div class="brand" id="brand">🐶 DelayDoge</div>
     <div class="rank" id="rank">Rookie</div>
@@ -236,7 +197,6 @@ body{
       <button class="btn full dark" onclick="joinHQ()">Join DelayDoge HQ</button>
     </div>
   </div>
-
 </div>
 
 <div class="nav" id="nav">
@@ -251,25 +211,10 @@ const API_BASE = window.location.origin;
 const telegramUrl = "https://t.me/DelayDogeHQ";
 const pumpUrl = "https://pump.fun/coin/FX5vX7PhceRzsGgCAh6sWawR7P5h9QbcpUd9PFGcpump";
 
-const tg = window.Telegram?.WebApp || null;
-if (tg) {
-  tg.ready();
-  tg.expand();
-}
-
-const tgUser = tg?.initDataUnsafe?.user || null;
-const referralCode = tg?.initDataUnsafe?.start_param || null;
-
-// مهم: لا نستخدم Guest / localStorage ID نهائيًا
-// هذا يمنع تكرار الحسابات بين الجوال والكمبيوتر.
-if (!tgUser || !tgUser.id) {
-  document.getElementById("app").style.display = "none";
-  document.getElementById("nav").style.display = "none";
-  document.getElementById("telegramOnly").style.display = "flex";
-  throw new Error("No Telegram WebApp user. Open from Telegram Mini App.");
-}
-
-const userId = "tg_" + tgUser.id;
+let tg = null;
+let tgUser = null;
+let referralCode = null;
+let userId = null;
 
 let coins = 0;
 let xp = 0;
@@ -305,6 +250,52 @@ const fallbackFeed = [
   "Leo hit a x5 combo ⚡",
   "Nora invited 3 delayed friends 👀"
 ];
+
+function showTelegramOnly(){
+  document.getElementById("app").style.display = "none";
+  document.getElementById("nav").style.display = "none";
+  document.getElementById("telegramOnly").style.display = "flex";
+}
+
+function bootTelegram(){
+  tg = window.Telegram?.WebApp || null;
+
+  if (!tg) {
+    setTimeout(() => {
+      tg = window.Telegram?.WebApp || null;
+      if (!tg) {
+        showTelegramOnly();
+        return;
+      }
+      continueBoot();
+    }, 1500);
+    return;
+  }
+
+  continueBoot();
+}
+
+function continueBoot(){
+  try {
+    tg.ready();
+    tg.expand();
+  } catch(e) {}
+
+  setTimeout(() => {
+    tgUser = tg?.initDataUnsafe?.user || null;
+    referralCode = tg?.initDataUnsafe?.start_param || null;
+
+    if (!tgUser || !tgUser.id) {
+      showTelegramOnly();
+      return;
+    }
+
+    userId = "tg_" + tgUser.id;
+
+    refresh();
+    loginUser();
+  }, 1500);
+}
 
 async function api(path, options = {}) {
   const res = await fetch(API_BASE + path, {
@@ -383,6 +374,7 @@ function save(){
 }
 
 async function syncSaveNow(){
+  if (!userId) return;
   try {
     const result = await api("/save", {
       method:"POST",
@@ -405,9 +397,12 @@ function refresh(){
   document.getElementById("streak").innerText = streak;
   document.getElementById("energyText").innerText = energy + "/100";
   document.getElementById("energyFill").style.width = Math.max(0, Math.min(100, energy)) + "%";
-  document.getElementById("inviteLink").innerText = getInviteLink();
 
-  if(tgUser.photo_url){
+  if (userId) {
+    document.getElementById("inviteLink").innerText = getInviteLink();
+  }
+
+  if(tgUser?.photo_url){
     document.getElementById("brand").innerHTML = `<img src="${tgUser.photo_url}" class="avatar" /> DelayDoge`;
   }
 
@@ -643,17 +638,18 @@ async function loadLeaderboard(){
 }
 
 setInterval(()=>{
-  if(energy < 100){
+  if(energy < 100 && userId){
     energy += 1;
     save();
     refresh();
   }
 }, 5000);
 
-setInterval(loadLeaderboard, 10000);
+setInterval(()=>{
+  if(userId) loadLeaderboard();
+}, 10000);
 
-refresh();
-loginUser();
+bootTelegram();
 </script>
 
 </body>
