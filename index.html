@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V5 - Addiction Upgrade</title>
+<title>DelayDoge V6 - Telegram Ready</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
@@ -436,7 +437,20 @@ async function api(path, options = {}) {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options
   });
-  return res.json();
+
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : {}; }
+  catch { data = { raw: text }; }
+
+  if (!res.ok) {
+    const err = new Error(data?.message || data?.error || "API request failed");
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+
+  return data;
 }
 
 function getTelegramProfile(){
@@ -456,21 +470,47 @@ function playerPayload(){
 
 async function loginUser(){
   try {
-    const result = await api("/auth/telegram", {
-      method:"POST",
-      body: JSON.stringify({
-        initData: tg?.initData || "",
-        user: tgUser,
-        fallbackUserId: userId,
-        referralCode
-      })
-    });
-    if(result.success && result.player){
+    let result = null;
+
+    // V6 endpoint
+    try {
+      result = await api("/auth/telegram", {
+        method:"POST",
+        body: JSON.stringify({
+          initData: tg?.initData || "",
+          user: tgUser,
+          fallbackUserId: userId,
+          referralCode
+        })
+      });
+    } catch (err) {
+      // Older/simple server fallback
+      if (tgUser?.id) {
+        const simpleUser = await api("/login", {
+          method:"POST",
+          body: JSON.stringify(getTelegramProfile())
+        });
+        result = {
+          success: true,
+          player: {
+            userId,
+            telegram: getTelegramProfile(),
+            coins: Number(simpleUser.points) || coins,
+            xp, taps, streak, energy, rank: getRank()
+          }
+        };
+      } else {
+        throw err;
+      }
+    }
+
+    if(result?.success && result.player){
       applyPlayer(result.player);
       showPopup(tgUser?.first_name ? "Welcome " + tgUser.first_name + " 🐶" : "Welcome back 🐶");
     } else {
       await syncSaveNow();
     }
+
     await loadLeaderboard();
   } catch(err){
     console.warn("Login failed:", err);
@@ -507,8 +547,16 @@ function save(){
 }
 
 async function syncSaveNow(){
-  try { await api("/save", { method:"POST", body: JSON.stringify(playerPayload()) }); }
-  catch(err){ console.warn("Save failed:", err); }
+  try {
+    await api("/save", { method:"POST", body: JSON.stringify(playerPayload()) });
+  } catch(err){
+    try {
+      const id = tgUser?.id || userId;
+      await api("/tap", { method:"POST", body: JSON.stringify({ id, points: coins }) });
+    } catch(err2){
+      console.warn("Save failed:", err2);
+    }
+  }
 }
 
 function refresh(){
@@ -622,7 +670,21 @@ async function dailyReward(){
     showPopup("Daily Reward +" + result.reward + " 🎁");
     refresh();
     await loadLeaderboard();
-  } catch(err){ showPopup("Daily reward failed"); }
+  } catch(err){
+    const today = new Date().toDateString();
+    const claimed = localStorage.getItem("dd_daily_reward");
+    if(claimed === today){ showPopup("Already claimed today 📦"); return; }
+    const reward = 100;
+    coins += reward;
+    xp += reward;
+    energy = 100;
+    streak += 1;
+    localStorage.setItem("dd_daily_reward", today);
+    document.getElementById("status").innerText = "Daily reward claimed locally. Energy restored ⚡";
+    showPopup("Daily Reward +" + reward + " 🎁");
+    save();
+    refresh();
+  }
 }
 
 function claimTapTask(){
@@ -650,16 +712,23 @@ async function copyInvite(){
 
 function shareTelegram(){
   const link = getInviteLink();
-  const text = encodeURIComponent("I’m playing DelayDoge 🐶📦
+  const message = `I’m playing DelayDoge 🐶📦
 Tap to deliver. Earn the meme.
 
-" + link);
-  window.open("https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + text, "_blank");
+${link}`;
+
+  window.open(
+    "https://t.me/share/url?url=" + encodeURIComponent(link) +
+    "&text=" + encodeURIComponent(message),
+    "_blank"
+  );
+
   coins += 15;
   xp += 25;
   save();
   refresh();
 }
+
 function joinHQ(){ window.open(telegramUrl, "_blank"); }
 function viewToken(){ window.open(pumpUrl, "_blank"); }
 
@@ -678,11 +747,17 @@ function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 async function loadLeaderboard(){
   try {
     const result = await api("/leaderboard");
-    if(!result.success || !Array.isArray(result.leaderboard)) return;
-    const rows = result.leaderboard.slice(0,5).map((p,i)=>{
-      const name = p.telegram?.username ? "@"+p.telegram.username : (p.telegram?.first_name || p.userId.slice(0,8));
-      return `${i+1}. ${name} — ${p.coins || 0} pts`;
+    const list = Array.isArray(result) ? result : result.leaderboard;
+    if(!Array.isArray(list)) return;
+
+    const rows = list.slice(0,5).map((p,i)=>{
+      const name = p.telegram?.username
+        ? "@" + p.telegram.username
+        : (p.telegram?.first_name || p.username || p.first_name || (p.userId ? p.userId.slice(0,8) : "Player"));
+      const pts = Number(p.coins ?? p.points ?? 0);
+      return `${i+1}. ${name} — ${pts} pts`;
     });
+
     document.getElementById("feed").innerHTML = rows.length ? rows.join("<br>") : feedItems.slice(0,3).join("<br>");
   } catch(err){
     const a = feedItems[Math.floor(Math.random()*feedItems.length)];
