@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V8.2 Gang</title>
+<title>DelayDoge V8.3 Images</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -61,13 +61,14 @@ body{min-height:100vh;background:linear-gradient(180deg,#050814,#101b33,#070b18)
 .shake{animation:shake .25s}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .gang-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.gang-card{background:#081125;border:1px solid #2b4376;border-radius:18px;padding:12px;text-align:center;min-height:155px;position:relative}
+.gang-card{background:#081125;border:1px solid #2b4376;border-radius:18px;padding:12px;text-align:center;min-height:190px;position:relative;overflow:hidden}
 .gang-icon{font-size:42px;margin-bottom:7px}
+.gang-img{width:100%;height:92px;object-fit:cover;border-radius:14px;margin-bottom:8px;border:1px solid #2b4376}
 .gang-name{font-weight:900;color:#f7c843;font-size:14px;margin-bottom:4px}
 .gang-role{font-size:11px;color:#9fb4ef;margin-bottom:6px}
 .gang-desc{font-size:11px;color:#dbe5ff;line-height:1.35}
 .locked{opacity:.45;filter:grayscale(1)}
-.badge{position:absolute;top:8px;right:8px;background:#203869;color:white;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:900}
+.badge{position:absolute;top:8px;right:8px;background:#203869;color:white;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:900;z-index:3}
 .unlocked{background:#35d07f;color:#07101f}
 </style>
 </head>
@@ -185,7 +186,7 @@ const statuses=[
 ];
 
 const gang=[
-{icon:"🐶",name:"DelayDoge",role:"The Main Legend",desc:"Cold, late, and proud. Every delay makes him stronger.",unlock:0,type:"hero"},
+{icon:"🐶",img:"assets/characters/Gemini_Generated_Image_fforqkfforqkffor.png",name:"DelayDoge",role:"The Main Legend",desc:"Cold, late, and proud. Every delay makes him stronger.",unlock:0,type:"hero"},
 {icon:"⚡",name:"Express Cat",role:"The Rival",desc:"Fast and nervous. If you beat him, you win bonus points.",unlock:300,type:"hero"},
 {icon:"📦",name:"Parcel Pete",role:"The Veteran",desc:"Old delivery dog. Sometimes gives free boxes.",unlock:700,type:"hero"},
 {icon:"😴",name:"Sleepy Doge",role:"The Nap Master",desc:"Always sleepy, always late. Gives XP naps.",unlock:1200,type:"hero"},
@@ -447,7 +448,7 @@ function renderGang(){
     const open=xp>=c.unlock;
     return `<div class="gang-card ${open?"":"locked"}">
       <div class="badge ${open?"unlocked":""}">${open?"OPEN":c.unlock+" XP"}</div>
-      <div class="gang-icon">${open?c.icon:"🔒"}</div>
+      ${open && c.img ? `<img class="gang-img" src="${c.img}" alt="${c.name}">` : `<div class="gang-icon">${open?c.icon:"🔒"}</div>`}
       <div class="gang-name">${c.name}</div>
       <div class="gang-role">${c.role}</div>
       <div class="gang-desc">${c.desc}</div>
