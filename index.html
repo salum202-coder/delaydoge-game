@@ -3,85 +3,63 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V7</title>
+<title>DelayDoge V8</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
-body{
-  min-height:100vh;background:linear-gradient(180deg,#050814,#101b33,#070b18);
-  color:white;display:flex;justify-content:center;padding:14px;overflow-x:hidden;
-}
-.app{width:100%;max-width:430px;padding-bottom:90px}
+body{min-height:100vh;background:linear-gradient(180deg,#050814,#101b33,#070b18);color:white;display:flex;justify-content:center;padding:14px;overflow-x:hidden}
+.app{width:100%;max-width:430px;padding-bottom:95px}
 .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.brand{font-weight:900;color:#f7c843;font-size:19px}
+.brand{font-weight:900;color:#f7c843;font-size:20px}
 .rank{background:#203869;padding:8px 13px;border-radius:999px;font-size:13px;font-weight:900}
-.balance,.game-card,.section{background:#0f1b33;border:1px solid #2b4376}
-.balance{border-radius:24px;padding:16px;text-align:center;margin-bottom:14px}
-.label{color:#9fb4ef;font-size:13px;margin-bottom:5px}
-.coins{font-size:40px;font-weight:900;color:#f7c843}
-.sub{font-size:13px;color:#cbd8ff;margin-top:5px}
-.game-card{border-radius:30px;padding:20px;box-shadow:0 0 35px rgba(0,0,0,.45);text-align:center;position:relative;overflow:hidden}
-.mascot{
-  width:210px;height:210px;border-radius:50%;margin:8px auto 18px;
-  background:radial-gradient(circle,#f7c843,#d88922);display:flex;align-items:center;justify-content:center;
-  font-size:95px;border:6px solid #203869;box-shadow:0 0 35px rgba(247,200,67,.28);
-  user-select:none;cursor:pointer;touch-action:manipulation;
-}
+.card,.section{background:#0f1b33;border:1px solid #2b4376;border-radius:26px}
+.card{padding:16px;text-align:center;margin-bottom:14px}
+.label{color:#9fb4ef;font-size:13px}
+.coins{font-size:42px;font-weight:900;color:#f7c843;margin:5px 0}
+.sub{font-size:13px;color:#cbd8ff}
+.game-card{background:#0f1b33;border:1px solid #2b4376;border-radius:30px;padding:20px;text-align:center;position:relative;overflow:hidden;box-shadow:0 0 35px rgba(0,0,0,.45)}
+.mascot{width:215px;height:215px;border-radius:50%;margin:8px auto 18px;background:radial-gradient(circle,#f7c843,#d88922);display:flex;align-items:center;justify-content:center;font-size:98px;border:6px solid #203869;box-shadow:0 0 35px rgba(247,200,67,.28);user-select:none;cursor:pointer;touch-action:manipulation}
 .mascot:active{transform:scale(.94)}
-.tap-text{font-size:24px;font-weight:900;margin-bottom:10px;color:#f7c843}
-.status{
-  min-height:58px;background:#081125;border:1px solid #2b4376;border-radius:18px;
-  padding:13px;display:flex;align-items:center;justify-content:center;
-  font-size:15px;line-height:1.35;color:#dbe5ff;margin-bottom:14px;
-}
-.combo{font-size:15px;font-weight:900;color:#35d07f;margin-bottom:10px}
-.energy-wrap{margin:12px 0}
+.tap-text{font-size:25px;font-weight:900;color:#f7c843;margin-bottom:8px}
+.combo{font-size:16px;font-weight:900;color:#35d07f;margin-bottom:10px}
+.status{min-height:58px;background:#081125;border:1px solid #2b4376;border-radius:18px;padding:13px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1.35;color:#dbe5ff;margin-bottom:14px}
 .energy-top{display:flex;justify-content:space-between;font-size:13px;color:#9fb4ef;margin-bottom:6px}
 .energy-bar{width:100%;height:14px;background:#081125;border-radius:999px;overflow:hidden;border:1px solid #2b4376}
 .energy-fill{height:100%;width:100%;background:linear-gradient(90deg,#35d07f,#f7c843);transition:.2s}
 .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:13px}
 .box{background:#081125;border:1px solid #2b4376;border-radius:17px;padding:12px 8px}
-.box .small{font-size:11px;color:#9fb4ef;margin-bottom:5px}
-.box .num{font-size:18px;font-weight:900}
-.section{margin-top:14px;border-radius:24px;padding:16px}
-.section h3{font-size:17px;color:#f7c843;margin-bottom:10px}
+.small{font-size:11px;color:#9fb4ef;margin-bottom:5px}
+.num{font-size:18px;font-weight:900}
+.section{margin-top:14px;padding:16px}
+.section h3{font-size:18px;color:#f7c843;margin-bottom:10px}
+.feed{font-size:14px;color:#dbe5ff;line-height:1.8}
 .task{display:flex;justify-content:space-between;align-items:center;background:#081125;border:1px solid #2b4376;padding:12px;border-radius:15px;margin-bottom:9px}
-.task span{font-size:14px}
 .btn{border:none;padding:10px 12px;border-radius:12px;background:#f7c843;color:#07101f;font-weight:900;cursor:pointer;touch-action:manipulation}
 .btn.dark{background:#203869;color:#fff}
 .btn.full{width:100%;padding:14px;margin-top:8px;font-size:16px}
-.feed{font-size:13px;color:#dbe5ff;line-height:1.7}
-.nav{
-  position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
-  width:calc(100% - 28px);max-width:430px;display:grid;grid-template-columns:repeat(4,1fr);
-  gap:8px;background:#0b1326;border:1px solid #2b4376;padding:8px;border-radius:22px;
-  box-shadow:0 0 25px rgba(0,0,0,.45);z-index:60;
-}
-.nav button{border:none;background:#111f3f;color:white;border-radius:15px;padding:10px 4px;font-size:12px;font-weight:900;touch-action:manipulation}
+.nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 28px);max-width:430px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#0b1326;border:1px solid #2b4376;padding:8px;border-radius:22px;z-index:60}
+.nav button{border:none;background:#111f3f;color:white;border-radius:15px;padding:10px 4px;font-size:12px;font-weight:900}
 .nav button.active{background:#f7c843;color:#07101f}
 .hidden{display:none}
-.invite-link{font-size:12px;color:#cbd8ff;word-break:break-all;background:#081125;border:1px solid #2b4376;border-radius:14px;padding:10px;margin-top:8px}
-.popup{
-  position:fixed;top:18px;left:50%;transform:translateX(-50%);
-  background:#f7c843;color:#07101f;padding:12px 18px;border-radius:999px;
-  font-weight:900;opacity:0;pointer-events:none;transition:.25s;z-index:99;
-}
+.popup{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:#f7c843;color:#07101f;padding:12px 18px;border-radius:999px;font-weight:900;opacity:0;pointer-events:none;transition:.25s;z-index:99}
 .popup.show{opacity:1;top:28px}
 .float{position:absolute;color:#f7c843;font-weight:900;font-size:22px;pointer-events:none;animation:floatUp .8s ease-out forwards}
 @keyframes floatUp{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-70px) scale(1.35)}}
-.loot-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:120;padding:20px}
-.loot-box{width:100%;max-width:360px;background:#0f1b33;border:2px solid #f7c843;border-radius:28px;padding:28px 20px;text-align:center;box-shadow:0 0 40px rgba(247,200,67,.35)}
-.loot-icon{font-size:80px;margin-bottom:12px}
-.loot-title{font-size:28px;color:#f7c843;font-weight:900;margin-bottom:10px}
-.loot-reward{font-size:18px;color:#fff;margin-bottom:18px;line-height:1.5}
-.rank-flash{position:fixed;inset:0;background:rgba(247,200,67,.92);color:#07101f;display:none;align-items:center;justify-content:center;text-align:center;z-index:130;padding:30px;font-weight:900}
-.rank-flash div{font-size:34px;line-height:1.3}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:120;padding:20px}
+.modal{width:100%;max-width:360px;background:#0f1b33;border:2px solid #f7c843;border-radius:28px;padding:26px 20px;text-align:center;box-shadow:0 0 40px rgba(247,200,67,.35)}
+.modal-icon{font-size:78px;margin-bottom:12px}
+.modal-title{font-size:28px;color:#f7c843;font-weight:900;margin-bottom:10px}
+.modal-text{font-size:17px;color:#fff;margin-bottom:18px;line-height:1.5}
 .telegram-only{min-height:100vh;width:100%;max-width:430px;display:none;align-items:center;justify-content:center;text-align:center;padding:24px}
 .telegram-only-card{background:#0f1b33;border:1px solid #2b4376;border-radius:28px;padding:24px}
 .telegram-only-card h2{color:#f7c843;margin-bottom:10px}
 .telegram-only-card p{color:#cbd8ff;line-height:1.6;font-size:15px}
-.avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px}
+.invite-link{font-size:12px;color:#cbd8ff;word-break:break-all;background:#081125;border:1px solid #2b4376;border-radius:14px;padding:10px;margin-top:8px}
+.flash{animation:flash .35s ease}
+@keyframes flash{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
+.shake{animation:shake .25s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 </style>
 </head>
 
@@ -90,40 +68,32 @@ body{
 <div class="telegram-only" id="telegramOnly">
   <div class="telegram-only-card">
     <h2>🐶 Open from Telegram</h2>
-    <p>
-      افتح اللعبة من زر تيليجرام الرسمي داخل البوت.
-      <br><br>
-      هذا يحفظ نقاطك بنفس الحساب ويمنع تكرار الحسابات.
-    </p>
+    <p>افتح اللعبة من زر تيليجرام الرسمي داخل البوت عشان تنحفظ نقاطك بنفس الحساب.</p>
   </div>
 </div>
 
 <div class="popup" id="popup">+1</div>
 
-<div class="loot-overlay" id="lootOverlay">
-  <div class="loot-box">
-    <div class="loot-icon">🎁</div>
-    <div class="loot-title">LOOT BOX!</div>
-    <div class="loot-reward" id="lootReward">You found +50 points</div>
-    <button class="btn full" onclick="closeLoot()">CLAIM</button>
+<div class="overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-icon" id="modalIcon">🎁</div>
+    <div class="modal-title" id="modalTitle">Loot Box</div>
+    <div class="modal-text" id="modalText">Reward</div>
+    <button class="btn full" onclick="closeModal()">CLAIM</button>
   </div>
-</div>
-
-<div class="rank-flash" id="rankFlash">
-  <div id="rankFlashText">NEW RANK!</div>
 </div>
 
 <div class="app" id="app">
   <div class="header">
-    <div class="brand" id="brand">🐶 DelayDoge</div>
+    <div class="brand">🐶 DelayDoge</div>
     <div class="rank" id="rank">Rookie</div>
   </div>
 
   <div id="homePage">
-    <div class="balance">
+    <div class="card">
       <div class="label">Your Delay Points</div>
       <div class="coins" id="coins">0</div>
-      <div class="sub">Tap fast. Build combo. Open boxes.</div>
+      <div class="sub" id="dailyText">Tap fast. Build combo. Open boxes.</div>
     </div>
 
     <div class="game-card" id="gameCard">
@@ -132,15 +102,8 @@ body{
       <div class="combo" id="comboText">Combo: x1</div>
       <div class="status" id="status">Your package is waiting...</div>
 
-      <div class="energy-wrap">
-        <div class="energy-top">
-          <span>Energy</span>
-          <span id="energyText">100/100</span>
-        </div>
-        <div class="energy-bar">
-          <div class="energy-fill" id="energyFill"></div>
-        </div>
-      </div>
+      <div class="energy-top"><span>Energy</span><span id="energyText">100/100</span></div>
+      <div class="energy-bar"><div class="energy-fill" id="energyFill"></div></div>
 
       <div class="stats">
         <div class="box"><div class="small">XP</div><div class="num" id="xp">0</div></div>
@@ -150,36 +113,25 @@ body{
     </div>
 
     <div class="section">
-      <h3>🔥 Leaderboard</h3>
-      <div class="feed" id="feed">Loading top players...</div>
+      <h3>🔥 Live Feed</h3>
+      <div class="feed" id="feed">Loading...</div>
     </div>
   </div>
 
   <div id="tasksPage" class="hidden">
     <div class="section">
-      <h3>✅ Daily Tasks</h3>
-      <div class="task">
-        <span>Tap 50 times</span>
-        <button class="btn" onclick="claimTapTask()">Claim</button>
-      </div>
-      <div class="task">
-        <span>Claim daily reward</span>
-        <button class="btn" onclick="dailyReward()">Claim</button>
-      </div>
-      <div class="task">
-        <span>Copy invite link</span>
-        <button class="btn" onclick="copyInvite()">Copy</button>
-      </div>
-      <button class="btn full dark" onclick="shareTelegram()">📨 Share to Telegram</button>
+      <h3>✅ Daily Missions</h3>
+      <div class="task"><span>Tap 50 times</span><button class="btn" onclick="claimTapTask()">Claim</button></div>
+      <div class="task"><span>Daily Streak Reward</span><button class="btn" onclick="dailyReward()">Claim</button></div>
+      <div class="task"><span>Open Mystery Box</span><button class="btn" onclick="manualBox()">Open</button></div>
+      <button class="btn full dark" onclick="shareTelegram()">📨 Share DelayDoge</button>
     </div>
   </div>
 
   <div id="invitePage" class="hidden">
     <div class="section">
       <h3>🔗 Invite & Earn</h3>
-      <p style="font-size:14px;color:#cbd8ff;line-height:1.5;">
-        Invite a delayed friend. You earn 3000 points. Your friend earns 1000 points.
-      </p>
+      <p style="font-size:14px;color:#cbd8ff;line-height:1.6">Invite a friend. You earn 3000 points. Your friend earns 1000 points.</p>
       <div class="invite-link" id="inviteLink"></div>
       <button class="btn full" onclick="copyInvite()">Copy Invite Link</button>
       <button class="btn full dark" onclick="shareTelegram()">Share to Telegram</button>
@@ -189,9 +141,8 @@ body{
   <div id="walletPage" class="hidden">
     <div class="section">
       <h3>💎 $DLDG</h3>
-      <p style="font-size:14px;color:#cbd8ff;line-height:1.6;">
-        DelayDoge is for everyone who waited too long.
-        View the token, join the HQ, and stay early.
+      <p style="font-size:14px;color:#cbd8ff;line-height:1.6">
+        $DLDG is coming. Play, invite, earn points, and stay early.
       </p>
       <button class="btn full" onclick="viewToken()">View $DLDG</button>
       <button class="btn full dark" onclick="joinHQ()">Join DelayDoge HQ</button>
@@ -211,446 +162,264 @@ const API_BASE = window.location.origin;
 const telegramUrl = "https://t.me/DelayDogeHQ";
 const pumpUrl = "https://pump.fun/coin/FX5vX7PhceRzsGgCAh6sWawR7P5h9QbcpUd9PFGcpump";
 
-let tg = null;
-let tgUser = null;
-let referralCode = null;
-let userId = null;
+let tg=null,tgUser=null,referralCode=null,userId=null;
+let coins=0,xp=0,taps=0,streak=0,energy=100,combo=1,lastTapTime=0,previousRank="Rookie",saveTimer=null;
 
-let coins = 0;
-let xp = 0;
-let taps = 0;
-let streak = 0;
-let energy = 100;
-let lastTapTime = 0;
-let combo = 1;
-let previousRank = "Rookie";
-let saveTimer = null;
-
-const statuses = [
-  "Package moved 2 meters. Bullish 📦",
-  "Driver took lunch and vanished 🍔",
-  "Out for delivery since yesterday 😂",
-  "Package delayed emotionally 😭",
-  "Tracking says: still suffering",
-  "Warehouse forgot it exists 💀",
-  "Delivered to someone named Not You",
-  "Your package entered the shadow realm 🌑",
-  "Delay detected. Meme confirmed.",
-  "The box is closer than your profits.",
-  "Customs opened it for emotional support.",
-  "Package is doing side quests.",
-  "Estimated delivery: eventually.",
-  "The driver said diamond hands only.",
-  "Your package got rugged by logistics."
+const statuses=[
+"Package moved 2 meters. Bullish 📦",
+"Driver took lunch and vanished 🍔",
+"Out for delivery since yesterday 😂",
+"Package delayed emotionally 😭",
+"Tracking says: still suffering",
+"Warehouse forgot it exists 💀",
+"Delivered to someone named Not You",
+"Customs opened it for emotional support.",
+"Package is doing side quests.",
+"The driver said diamond hands only."
 ];
 
-const fallbackFeed = [
-  "Mona opened a Legendary Box 🎁",
-  "Omar reached Customs Boss 🔥",
-  "Leo hit a x5 combo ⚡",
-  "Nora invited 3 delayed friends 👀"
+const characters=[
+{icon:"🛃",name:"Customs Boss",text:"Stopped your package. -10 Energy",type:"bad",energy:-10},
+{icon:"✈️",name:"Pilot Doge",text:"Airdropped bonus crate. +150 Points",type:"good",coins:150,xp:50},
+{icon:"😡",name:"Angry Karen",text:"Complaint attack! Combo reset.",type:"bad",comboReset:true},
+{icon:"😴",name:"Sleepy Doge",text:"Nap bonus. +100 XP",type:"good",xp:100},
+{icon:"🚦",name:"Traffic Raccoon",text:"Random traffic. -50 Points",type:"bad",coins:-50},
+{icon:"🎸",name:"Rockstar Doge",text:"Crowd hype! +250 Points",type:"good",coins:250,xp:100}
+];
+
+const boxes=[
+{name:"Common Box",icon:"📦",coins:80,xp:40},
+{name:"Rare Box",icon:"💎",coins:200,xp:120},
+{name:"Epic Box",icon:"🚀",coins:500,xp:250},
+{name:"Rugged Box",icon:"💀",coins:0,xp:0},
+{name:"Golden Delay Box",icon:"👑",coins:1000,xp:500}
 ];
 
 function showTelegramOnly(){
-  document.getElementById("app").style.display = "none";
-  document.getElementById("nav").style.display = "none";
-  document.getElementById("telegramOnly").style.display = "flex";
+  document.getElementById("app").style.display="none";
+  document.getElementById("nav").style.display="none";
+  document.getElementById("telegramOnly").style.display="flex";
 }
 
 function bootTelegram(){
-  tg = window.Telegram?.WebApp || null;
-
-  if (!tg) {
-    setTimeout(() => {
-      tg = window.Telegram?.WebApp || null;
-      if (!tg) {
-        showTelegramOnly();
-        return;
-      }
-      continueBoot();
-    }, 1500);
+  tg=window.Telegram?.WebApp||null;
+  if(!tg){
+    setTimeout(()=>{tg=window.Telegram?.WebApp||null;if(!tg)return showTelegramOnly();continueBoot();},1500);
     return;
   }
-
   continueBoot();
 }
 
 function continueBoot(){
-  try {
-    tg.ready();
-    tg.expand();
-  } catch(e) {}
-
-  setTimeout(() => {
-    tgUser = tg?.initDataUnsafe?.user || null;
-    referralCode = tg?.initDataUnsafe?.start_param || null;
-
-    if (!tgUser || !tgUser.id) {
-      showTelegramOnly();
-      return;
-    }
-
-    userId = "tg_" + tgUser.id;
-
+  try{tg.ready();tg.expand();}catch(e){}
+  setTimeout(()=>{
+    tgUser=tg?.initDataUnsafe?.user||null;
+    referralCode=tg?.initDataUnsafe?.start_param||null;
+    if(!tgUser||!tgUser.id)return showTelegramOnly();
+    userId="tg_"+tgUser.id;
     refresh();
     loginUser();
-  }, 1500);
+  },1500);
 }
 
-async function api(path, options = {}) {
-  const res = await fetch(API_BASE + path, {
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-    ...options
-  });
+async function api(path,options={}){
+  const res=await fetch(API_BASE+path,{headers:{"Content-Type":"application/json",...(options.headers||{})},...options});
   return res.json();
 }
 
 function getTelegramProfile(){
-  return {
-    id: tgUser.id,
-    username: tgUser.username || "",
-    first_name: tgUser.first_name || "",
-    last_name: tgUser.last_name || "",
-    language_code: tgUser.language_code || "",
-    photo_url: tgUser.photo_url || ""
-  };
-}
-
-function playerPayload(){
-  return {
-    userId,
-    points: coins,
-    coins,
-    xp,
-    taps,
-    streak,
-    energy,
-    rank: getRank(),
-    telegram: getTelegramProfile()
-  };
+  return {id:tgUser.id,username:tgUser.username||"",first_name:tgUser.first_name||"",last_name:tgUser.last_name||"",language_code:tgUser.language_code||"",photo_url:tgUser.photo_url||""};
 }
 
 async function loginUser(){
-  try {
-    const result = await api("/auth/telegram", {
-      method:"POST",
-      body: JSON.stringify({
-        userId,
-        telegram: getTelegramProfile(),
-        user: getTelegramProfile(),
-        referralCode
-      })
-    });
-
-    if(result.success && (result.player || result.user)){
-      applyPlayer(result.player || result.user);
-      const name = tgUser.first_name || tgUser.username || "Doge";
-      showPopup("Welcome " + name + " 🐶");
-    } else {
-      showPopup("Login issue");
+  try{
+    const result=await api("/auth/telegram",{method:"POST",body:JSON.stringify({userId,telegram:getTelegramProfile(),user:getTelegramProfile(),referralCode})});
+    if(result.success&&(result.player||result.user)){
+      applyPlayer(result.player||result.user);
+      showPopup("Welcome "+(tgUser.first_name||tgUser.username||"Doge")+" 🐶");
     }
-
     await loadLeaderboard();
-  } catch(err){
-    console.warn("Login failed:", err);
-    showPopup("Server sync issue");
-  }
+  }catch(e){showPopup("Server sync issue")}
   refresh();
 }
 
-function applyPlayer(player){
-  coins = Number(player.points ?? player.coins) || 0;
-  xp = Number(player.xp) || 0;
-  taps = Number(player.taps) || 0;
-  streak = Number(player.streak) || 0;
-  energy = Number(player.energy);
-  if(!Number.isFinite(energy)) energy = 100;
-  previousRank = player.rank || getRank();
+function applyPlayer(p){
+  coins=Number(p.points??p.coins)||0;
+  xp=Number(p.xp)||0;
+  taps=Number(p.taps)||0;
+  streak=Number(p.streak)||0;
+  energy=Number(p.energy); if(!Number.isFinite(energy))energy=100;
+  previousRank=p.rank||getRank();
 }
+
+function payload(){return{userId,points:coins,coins,xp,taps,streak,energy,rank:getRank(),telegram:getTelegramProfile()};}
 
 function save(){
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(syncSaveNow, 500);
+  saveTimer=setTimeout(syncSaveNow,600);
 }
 
 async function syncSaveNow(){
-  if (!userId) return;
-  try {
-    const result = await api("/save", {
-      method:"POST",
-      body: JSON.stringify(playerPayload())
-    });
-    if(result.success && (result.player || result.user)){
-      const serverPlayer = result.player || result.user;
-      coins = Math.max(coins, Number(serverPlayer.points ?? serverPlayer.coins) || 0);
-      xp = Math.max(xp, Number(serverPlayer.xp) || 0);
-    }
-  } catch(err){
-    console.warn("Save failed:", err);
-  }
+  if(!userId)return;
+  try{await api("/save",{method:"POST",body:JSON.stringify(payload())});}catch(e){}
 }
 
 function refresh(){
-  document.getElementById("coins").innerText = coins;
-  document.getElementById("xp").innerText = xp;
-  document.getElementById("taps").innerText = taps;
-  document.getElementById("streak").innerText = streak;
-  document.getElementById("energyText").innerText = energy + "/100";
-  document.getElementById("energyFill").style.width = Math.max(0, Math.min(100, energy)) + "%";
-
-  if (userId) {
-    document.getElementById("inviteLink").innerText = getInviteLink();
-  }
-
-  if(tgUser?.photo_url){
-    document.getElementById("brand").innerHTML = `<img src="${tgUser.photo_url}" class="avatar" /> DelayDoge`;
-  }
-
-  const rank = getRank();
-  document.getElementById("rank").innerText = rank;
-
-  if(rank !== previousRank){
-    showRankFlash(rank);
-    previousRank = rank;
-  }
-}
-
-function getInviteLink(){
-  return "https://t.me/DelayDogeGameBot?start=" + encodeURIComponent(userId);
+  document.getElementById("coins").innerText=coins;
+  document.getElementById("xp").innerText=xp;
+  document.getElementById("taps").innerText=taps;
+  document.getElementById("streak").innerText=streak;
+  document.getElementById("energyText").innerText=energy+"/100";
+  document.getElementById("energyFill").style.width=Math.max(0,Math.min(100,energy))+"%";
+  document.getElementById("rank").innerText=getRank();
+  if(userId)document.getElementById("inviteLink").innerText=getInviteLink();
 }
 
 function getRank(){
-  if(xp >= 10000) return "Delay King";
-  if(xp >= 5000) return "Delivery Legend";
-  if(xp >= 2500) return "Customs Boss";
-  if(xp >= 1000) return "Lost Parcel";
-  if(xp >= 300) return "Delayed";
-  return "Rookie";
+  if(xp>=10000)return"Delay King";
+  if(xp>=5000)return"Delivery Legend";
+  if(xp>=2500)return"Customs Boss";
+  if(xp>=1000)return"Lost Parcel";
+  if(xp>=300)return"Delayed";
+  return"Rookie";
 }
 
 function tapDeliver(e){
-  if(energy <= 0){
-    document.getElementById("status").innerText = "Energy empty. Claim daily reward ⚡";
-    return;
-  }
+  if(energy<=0){document.getElementById("status").innerText="Energy empty. Claim daily reward ⚡";return}
+  const now=Date.now();
+  combo=(now-lastTapTime<650)?Math.min(combo+1,5):1;
+  lastTapTime=now;
 
-  const now = Date.now();
-  combo = (now - lastTapTime < 650) ? Math.min(combo + 1, 5) : 1;
-  lastTapTime = now;
+  const gain=combo;
+  coins+=gain; xp+=combo*2; taps++; energy--;
+  document.getElementById("comboText").innerText="Combo: x"+combo;
+  document.getElementById("status").innerText=statuses[Math.floor(Math.random()*statuses.length)];
+  createFloat(e,"+"+gain);
 
-  const gainedCoins = combo;
-  const gainedXp = combo * 2;
+  if(combo>=3)document.getElementById("gameCard").classList.add("flash");
+  setTimeout(()=>document.getElementById("gameCard").classList.remove("flash"),350);
 
-  coins += gainedCoins;
-  xp += gainedXp;
-  taps += 1;
-  energy -= 1;
+  if(taps%25===0)openBox();
+  if(Math.random()<0.055)characterEvent();
+  if(navigator.vibrate)navigator.vibrate(30);
 
-  document.getElementById("comboText").innerText = "Combo: x" + combo;
-  document.getElementById("status").innerText = statuses[Math.floor(Math.random()*statuses.length)];
-  createFloatingText(e, "+" + gainedCoins);
-
-  if(Math.random() < 0.025){
-    coins += 500;
-    xp += 300;
-    showPopup("🍀 LUCKY TAP +500!");
-    document.getElementById("status").innerText = "JACKPOT! Your package escaped the warehouse 🍀";
-  }
-
-  if(taps % 25 === 0) openLootBox();
-  else showPopup("+" + gainedCoins + " Delay Point");
-
-  if(navigator.vibrate) navigator.vibrate(35);
-
-  save();
-  refresh();
+  save();refresh();
 }
 
-function createFloatingText(e, text){
-  const card = document.getElementById("gameCard");
-  const float = document.createElement("div");
-  float.className = "float";
-  float.innerText = text;
-
-  const rect = card.getBoundingClientRect();
-  const touch = e.touches?.[0] || e.changedTouches?.[0];
-  const x = touch ? touch.clientX - rect.left : (e.clientX ? e.clientX - rect.left : rect.width/2);
-  const y = touch ? touch.clientY - rect.top : (e.clientY ? e.clientY - rect.top : 160);
-
-  float.style.left = x + "px";
-  float.style.top = y + "px";
-  card.appendChild(float);
-  setTimeout(()=>float.remove(),800);
+function characterEvent(){
+  const c=characters[Math.floor(Math.random()*characters.length)];
+  if(c.coins)coins=Math.max(0,coins+c.coins);
+  if(c.xp)xp+=c.xp;
+  if(c.energy)energy=Math.max(0,Math.min(100,energy+c.energy));
+  if(c.comboReset)combo=1;
+  modal(c.icon,c.name,c.text);
+  if(c.type==="bad")document.getElementById("gameCard").classList.add("shake");
+  setTimeout(()=>document.getElementById("gameCard").classList.remove("shake"),300);
+  save();refresh();
 }
 
-function openLootBox(){
-  const rewards = [
-    {text:"+50 Delay Points", coins:50, xp:40},
-    {text:"+100 XP", coins:10, xp:100},
-    {text:"Rare Delay: +150 Points", coins:150, xp:80},
-    {text:"Legendary Package: +300 Points", coins:300, xp:150}
-  ];
-
-  const reward = rewards[Math.floor(Math.random()*rewards.length)];
-  coins += reward.coins;
-  xp += reward.xp;
-
-  document.getElementById("lootReward").innerText = reward.text;
-  document.getElementById("lootOverlay").style.display = "flex";
-
-  save();
-  refresh();
+function openBox(){
+  let r=Math.random(),b;
+  if(r<0.55)b=boxes[0]; else if(r<0.80)b=boxes[1]; else if(r<0.94)b=boxes[2]; else if(r<0.985)b=boxes[3]; else b=boxes[4];
+  coins+=b.coins; xp+=b.xp;
+  modal(b.icon,b.name,b.coins?`You found +${b.coins} points and +${b.xp} XP`:"You got rugged. Nothing 😂");
+  save();refresh();
 }
 
-function closeLoot(){
-  document.getElementById("lootOverlay").style.display = "none";
+function manualBox(){
+  if(coins<250){showPopup("Need 250 points");return}
+  coins-=250;openBox();
 }
 
-function showRankFlash(rank){
-  document.getElementById("rankFlashText").innerHTML = "NEW RANK<br>" + rank + " 🔥";
-  document.getElementById("rankFlash").style.display = "flex";
-  setTimeout(()=>document.getElementById("rankFlash").style.display = "none",1600);
+function modal(icon,title,text){
+  document.getElementById("modalIcon").innerText=icon;
+  document.getElementById("modalTitle").innerText=title;
+  document.getElementById("modalText").innerText=text;
+  document.getElementById("modalOverlay").style.display="flex";
 }
+function closeModal(){document.getElementById("modalOverlay").style.display="none"}
 
-function showPopup(text){
-  const popup = document.getElementById("popup");
-  popup.innerText = text;
-  popup.classList.add("show");
-  setTimeout(()=>popup.classList.remove("show"),1100);
+function createFloat(e,text){
+  const card=document.getElementById("gameCard");
+  const f=document.createElement("div");
+  f.className="float";f.innerText=text;
+  const rect=card.getBoundingClientRect();
+  const x=e.clientX?e.clientX-rect.left:rect.width/2;
+  const y=e.clientY?e.clientY-rect.top:160;
+  f.style.left=x+"px";f.style.top=y+"px";
+  card.appendChild(f);setTimeout(()=>f.remove(),800);
 }
 
 async function dailyReward(){
-  try {
-    const result = await api("/daily-reward", {
-      method:"POST",
-      body: JSON.stringify({ userId })
-    });
-
-    if(!result.success){
-      showPopup(result.message || "Already claimed today 📦");
-      return;
-    }
-
-    if(result.player || result.user) applyPlayer(result.player || result.user);
-
-    document.getElementById("status").innerText = "Daily reward claimed. Energy restored ⚡";
-    showPopup("Daily Reward +" + result.reward + " 🎁");
-
-    refresh();
-    await loadLeaderboard();
-  } catch(err){
-    showPopup("Daily reward failed");
-  }
+  try{
+    const r=await api("/daily-reward",{method:"POST",body:JSON.stringify({userId})});
+    if(!r.success){showPopup(r.message||"Already claimed");return}
+    if(r.player||r.user)applyPlayer(r.player||r.user);
+    modal("🎁","Daily Reward","+ "+r.reward+" Delay Points");
+    refresh();loadLeaderboard();
+  }catch(e){showPopup("Daily failed")}
 }
 
 function claimTapTask(){
-  const key = "dd_tap_task_" + userId + "_" + new Date().toDateString();
-  const claimed = sessionStorage.getItem(key);
-
-  if(claimed){
-    showPopup("Task already claimed");
-    return;
-  }
-
-  if(taps < 50){
-    showPopup("Need 50 total taps");
-    return;
-  }
-
-  coins += 100;
-  xp += 150;
-  sessionStorage.setItem(key, "1");
-
-  showPopup("Task Complete +100 🎉");
-  save();
-  refresh();
+  const key="tap50_"+userId+"_"+new Date().toDateString();
+  if(sessionStorage.getItem(key))return showPopup("Already claimed");
+  if(taps<50)return showPopup("Need 50 taps");
+  coins+=150;xp+=100;sessionStorage.setItem(key,"1");
+  modal("✅","Mission Complete","+150 points");
+  save();refresh();
 }
 
+function getInviteLink(){return"https://t.me/DelayDogeGameBot?start="+encodeURIComponent(userId)}
+
 async function copyInvite(){
-  const link = getInviteLink();
-
-  try {
-    await navigator.clipboard.writeText(link);
-  } catch {
-    showPopup("Copy failed");
-    return;
-  }
-
-  showPopup("Invite copied 🔗");
+  try{await navigator.clipboard.writeText(getInviteLink());showPopup("Invite copied 🔗")}catch(e){showPopup("Copy failed")}
 }
 
 function shareTelegram(){
-  const link = getInviteLink();
-  const message = `I’m playing DelayDoge 🐶📦
-Tap to deliver. Earn the meme.
-
-${link}`;
-
-  window.open(
-    "https://t.me/share/url?url=" + encodeURIComponent(link) +
-    "&text=" + encodeURIComponent(message),
-    "_blank"
-  );
+  const link=getInviteLink();
+  const msg=`I’m playing DelayDoge 🐶📦\nTap to deliver. Earn the meme.\n\n${link}`;
+  window.open("https://t.me/share/url?url="+encodeURIComponent(link)+"&text="+encodeURIComponent(msg),"_blank");
 }
 
-function joinHQ(){
-  window.open(telegramUrl, "_blank");
-}
+function joinHQ(){window.open(telegramUrl,"_blank")}
+function viewToken(){window.open(pumpUrl,"_blank")}
 
-function viewToken(){
-  window.open(pumpUrl, "_blank");
-}
-
-function showPage(page){
-  const pages = ["home","tasks","invite","wallet"];
-  pages.forEach(p=>{
-    document.getElementById(p+"Page").classList.add("hidden");
-    document.getElementById("nav"+capitalize(p)).classList.remove("active");
+function showPage(p){
+  ["home","tasks","invite","wallet"].forEach(x=>{
+    document.getElementById(x+"Page").classList.add("hidden");
+    document.getElementById("nav"+cap(x)).classList.remove("active");
   });
-
-  document.getElementById(page+"Page").classList.remove("hidden");
-  document.getElementById("nav"+capitalize(page)).classList.add("active");
-
-  if(page === "home") loadLeaderboard();
+  document.getElementById(p+"Page").classList.remove("hidden");
+  document.getElementById("nav"+cap(p)).classList.add("active");
+  if(p==="home")loadLeaderboard();
 }
-
-function capitalize(s){
-  return s.charAt(0).toUpperCase()+s.slice(1);
-}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
 
 async function loadLeaderboard(){
-  try {
-    const result = await api("/leaderboard");
-
-    if(!result.success || !Array.isArray(result.leaderboard)) return;
-
-    const rows = result.leaderboard.slice(0,10).map((p,i)=>{
-      const name = p.telegram?.username ? "@"+p.telegram.username : (p.telegram?.first_name || p.firstName || p.userId.slice(0,8));
-      const score = Number(p.points ?? p.coins) || 0;
-      const ref = Number(p.referrals) || 0;
-      return `${i+1}. ${name} — ${score} pts${ref ? " | " + ref + " invites" : ""}`;
+  try{
+    const r=await api("/leaderboard");
+    if(!r.success)return;
+    const rows=r.leaderboard.slice(0,10).map((p,i)=>{
+      const name=p.telegram?.username?"@"+p.telegram.username:(p.telegram?.first_name||p.firstName||"Player");
+      const score=Number(p.points??p.coins)||0;
+      return `${i+1}. ${name} — ${score} pts`;
     });
-
-    document.getElementById("feed").innerHTML = rows.length ? rows.join("<br>") : fallbackFeed.join("<br>");
-  } catch(err){
-    document.getElementById("feed").innerHTML = fallbackFeed.join("<br>");
+    document.getElementById("feed").innerHTML=rows.join("<br>")||"No players yet";
+  }catch(e){
+    document.getElementById("feed").innerHTML="Customs Boss delayed the leaderboard 🛃";
   }
 }
 
-setInterval(()=>{
-  if(energy < 100 && userId){
-    energy += 1;
-    save();
-    refresh();
-  }
-}, 5000);
+function showPopup(t){
+  const p=document.getElementById("popup");
+  p.innerText=t;p.classList.add("show");
+  setTimeout(()=>p.classList.remove("show"),1100);
+}
 
-setInterval(()=>{
-  if(userId) loadLeaderboard();
-}, 10000);
+setInterval(()=>{if(energy<100&&userId){energy++;save();refresh()}},5000);
+setInterval(()=>{if(userId)loadLeaderboard()},10000);
 
 bootTelegram();
 </script>
-
 </body>
 </html>
