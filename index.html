@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V8</title>
+<title>DelayDoge V8.2 Gang</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -60,6 +60,15 @@ body{min-height:100vh;background:linear-gradient(180deg,#050814,#101b33,#070b18)
 @keyframes flash{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
 .shake{animation:shake .25s}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.gang-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gang-card{background:#081125;border:1px solid #2b4376;border-radius:18px;padding:12px;text-align:center;min-height:155px;position:relative}
+.gang-icon{font-size:42px;margin-bottom:7px}
+.gang-name{font-weight:900;color:#f7c843;font-size:14px;margin-bottom:4px}
+.gang-role{font-size:11px;color:#9fb4ef;margin-bottom:6px}
+.gang-desc{font-size:11px;color:#dbe5ff;line-height:1.35}
+.locked{opacity:.45;filter:grayscale(1)}
+.badge{position:absolute;top:8px;right:8px;background:#203869;color:white;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:900}
+.unlocked{background:#35d07f;color:#07101f}
 </style>
 </head>
 
@@ -93,11 +102,11 @@ body{min-height:100vh;background:linear-gradient(180deg,#050814,#101b33,#070b18)
     <div class="card">
       <div class="label">Your Delay Points</div>
       <div class="coins" id="coins">0</div>
-      <div class="sub" id="dailyText">Tap fast. Build combo. Open boxes.</div>
+      <div class="sub">Tap fast. Build combo. Unlock the Delay Gang.</div>
     </div>
 
     <div class="game-card" id="gameCard">
-      <div class="mascot" onclick="tapDeliver(event)">📦</div>
+      <div class="mascot" onclick="tapDeliver(event)" id="mascot">📦</div>
       <div class="tap-text">TAP TO DELIVER</div>
       <div class="combo" id="comboText">Combo: x1</div>
       <div class="status" id="status">Your package is waiting...</div>
@@ -138,14 +147,14 @@ body{min-height:100vh;background:linear-gradient(180deg,#050814,#101b33,#070b18)
     </div>
   </div>
 
-  <div id="walletPage" class="hidden">
+  <div id="gangPage" class="hidden">
     <div class="section">
-      <h3>💎 $DLDG</h3>
-      <p style="font-size:14px;color:#cbd8ff;line-height:1.6">
-        $DLDG is coming. Play, invite, earn points, and stay early.
-      </p>
-      <button class="btn full" onclick="viewToken()">View $DLDG</button>
-      <button class="btn full dark" onclick="joinHQ()">Join DelayDoge HQ</button>
+      <h3>🐾 Delay Gang</h3>
+      <div class="gang-grid" id="gangGrid"></div>
+    </div>
+    <div class="section">
+      <h3>🎭 Skins</h3>
+      <div class="gang-grid" id="skinsGrid"></div>
     </div>
   </div>
 </div>
@@ -154,14 +163,11 @@ body{min-height:100vh;background:linear-gradient(180deg,#050814,#101b33,#070b18)
   <button id="navHome" class="active" onclick="showPage('home')">Home</button>
   <button id="navTasks" onclick="showPage('tasks')">Tasks</button>
   <button id="navInvite" onclick="showPage('invite')">Invite</button>
-  <button id="navWallet" onclick="showPage('wallet')">$DLDG</button>
+  <button id="navGang" onclick="showPage('gang')">Gang</button>
 </div>
 
 <script>
 const API_BASE = window.location.origin;
-const telegramUrl = "https://t.me/DelayDogeHQ";
-const pumpUrl = "https://pump.fun/coin/FX5vX7PhceRzsGgCAh6sWawR7P5h9QbcpUd9PFGcpump";
-
 let tg=null,tgUser=null,referralCode=null,userId=null;
 let coins=0,xp=0,taps=0,streak=0,energy=100,combo=1,lastTapTime=0,previousRank="Rookie",saveTimer=null;
 
@@ -178,13 +184,35 @@ const statuses=[
 "The driver said diamond hands only."
 ];
 
+const gang=[
+{icon:"🐶",name:"DelayDoge",role:"The Main Legend",desc:"Cold, late, and proud. Every delay makes him stronger.",unlock:0,type:"hero"},
+{icon:"⚡",name:"Express Cat",role:"The Rival",desc:"Fast and nervous. If you beat him, you win bonus points.",unlock:300,type:"hero"},
+{icon:"📦",name:"Parcel Pete",role:"The Veteran",desc:"Old delivery dog. Sometimes gives free boxes.",unlock:700,type:"hero"},
+{icon:"😴",name:"Sleepy Doge",role:"The Nap Master",desc:"Always sleepy, always late. Gives XP naps.",unlock:1200,type:"hero"},
+{icon:"🛃",name:"Customs Boss",role:"The Gatekeeper",desc:"Stops packages for no reason. Boss event enemy.",unlock:1800,type:"enemy"},
+{icon:"😡",name:"Angry Karen",role:"Queen of Complaints",desc:"Resets combo and files complaint forms.",unlock:2400,type:"enemy"},
+{icon:"🧭",name:"Lost Driver",role:"Wrong Turn Expert",desc:"Always lost. Can give random good or bad events.",unlock:3200,type:"enemy"},
+{icon:"🚦",name:"Traffic Raccoon",role:"Chaos Worker",desc:"Causes random traffic just for fun.",unlock:4000,type:"enemy"}
+];
+
+const skins=[
+{icon:"💼",name:"CEO Doge",role:"+ Mission Rewards",desc:"Business class delay. Earn more from tasks.",unlock:1000},
+{icon:"🥷",name:"Ninja Doge",role:"+ Box Chance",desc:"Silent delivery. Better mystery box luck.",unlock:1800},
+{icon:"🚀",name:"Space Doge",role:"+ XP Boost",desc:"Package lost in orbit. More XP from taps.",unlock:3000},
+{icon:"🌺",name:"Hawaii Doge",role:"+ Energy Saver",desc:"Maximum chill. Energy drains slower.",unlock:4500},
+{icon:"✈️",name:"Pilot Doge",role:"+ Random Airdrop",desc:"Drops crates from the sky.",unlock:6000},
+{icon:"🎸",name:"Rockstar Doge",role:"+ Combo Boost",desc:"Crowd hype. Combos hit harder.",unlock:8000}
+];
+
 const characters=[
-{icon:"🛃",name:"Customs Boss",text:"Stopped your package. -10 Energy",type:"bad",energy:-10},
-{icon:"✈️",name:"Pilot Doge",text:"Airdropped bonus crate. +150 Points",type:"good",coins:150,xp:50},
-{icon:"😡",name:"Angry Karen",text:"Complaint attack! Combo reset.",type:"bad",comboReset:true},
-{icon:"😴",name:"Sleepy Doge",text:"Nap bonus. +100 XP",type:"good",xp:100},
-{icon:"🚦",name:"Traffic Raccoon",text:"Random traffic. -50 Points",type:"bad",coins:-50},
-{icon:"🎸",name:"Rockstar Doge",text:"Crowd hype! +250 Points",type:"good",coins:250,xp:100}
+{icon:"🛃",name:"Customs Boss",text:"Stopped your package. -10 Energy",type:"bad",energy:-10,minXp:1800},
+{icon:"⚡",name:"Express Cat",text:"Speed challenge! +100 Points",type:"good",coins:100,xp:40,minXp:300},
+{icon:"📦",name:"Parcel Pete",text:"Found an old box. +150 Points",type:"good",coins:150,xp:50,minXp:700},
+{icon:"😴",name:"Sleepy Doge",text:"Nap bonus. +100 XP",type:"good",xp:100,minXp:1200},
+{icon:"😡",name:"Angry Karen",text:"Complaint attack! Combo reset.",type:"bad",comboReset:true,minXp:2400},
+{icon:"🧭",name:"Lost Driver",text:"Wrong turn reward. +80 Points",type:"good",coins:80,xp:20,minXp:3200},
+{icon:"🚦",name:"Traffic Raccoon",text:"Random traffic. -50 Points",type:"bad",coins:-50,minXp:4000},
+{icon:"🎸",name:"Rockstar Doge",text:"Crowd hype! +250 Points",type:"good",coins:250,xp:100,minXp:8000}
 ];
 
 const boxes=[
@@ -217,6 +245,7 @@ function continueBoot(){
     referralCode=tg?.initDataUnsafe?.start_param||null;
     if(!tgUser||!tgUser.id)return showTelegramOnly();
     userId="tg_"+tgUser.id;
+    renderGang();
     refresh();
     loginUser();
   },1500);
@@ -250,6 +279,7 @@ function applyPlayer(p){
   streak=Number(p.streak)||0;
   energy=Number(p.energy); if(!Number.isFinite(energy))energy=100;
   previousRank=p.rank||getRank();
+  renderGang();
 }
 
 function payload(){return{userId,points:coins,coins,xp,taps,streak,energy,rank:getRank(),telegram:getTelegramProfile()};}
@@ -273,6 +303,7 @@ function refresh(){
   document.getElementById("energyFill").style.width=Math.max(0,Math.min(100,energy))+"%";
   document.getElementById("rank").innerText=getRank();
   if(userId)document.getElementById("inviteLink").innerText=getInviteLink();
+  renderGang();
 }
 
 function getRank(){
@@ -290,8 +321,14 @@ function tapDeliver(e){
   combo=(now-lastTapTime<650)?Math.min(combo+1,5):1;
   lastTapTime=now;
 
-  const gain=combo;
-  coins+=gain; xp+=combo*2; taps++; energy--;
+  let gain=combo;
+  if(xp>=8000)gain+=1;
+
+  coins+=gain; 
+  xp+=combo*2; 
+  taps++; 
+  energy-=xp>=4500&&taps%2===0?0:1;
+
   document.getElementById("comboText").innerText="Combo: x"+combo;
   document.getElementById("status").innerText=statuses[Math.floor(Math.random()*statuses.length)];
   createFloat(e,"+"+gain);
@@ -300,14 +337,16 @@ function tapDeliver(e){
   setTimeout(()=>document.getElementById("gameCard").classList.remove("flash"),350);
 
   if(taps%25===0)openBox();
-  if(Math.random()<0.055)characterEvent();
+  if(taps>0 && taps%18===0)characterEvent();
   if(navigator.vibrate)navigator.vibrate(30);
 
   save();refresh();
 }
 
 function characterEvent(){
-  const c=characters[Math.floor(Math.random()*characters.length)];
+  const available=characters.filter(c=>xp>=c.minXp);
+  if(!available.length)return;
+  const c=available[Math.floor(Math.random()*available.length)];
   if(c.coins)coins=Math.max(0,coins+c.coins);
   if(c.xp)xp+=c.xp;
   if(c.energy)energy=Math.max(0,Math.min(100,energy+c.energy));
@@ -320,6 +359,8 @@ function characterEvent(){
 
 function openBox(){
   let r=Math.random(),b;
+  if(xp>=1800)r-=0.05;
+  if(xp>=3000)r-=0.08;
   if(r<0.55)b=boxes[0]; else if(r<0.80)b=boxes[1]; else if(r<0.94)b=boxes[2]; else if(r<0.985)b=boxes[3]; else b=boxes[4];
   coins+=b.coins; xp+=b.xp;
   modal(b.icon,b.name,b.coins?`You found +${b.coins} points and +${b.xp} XP`:"You got rugged. Nothing 😂");
@@ -337,6 +378,7 @@ function modal(icon,title,text){
   document.getElementById("modalText").innerText=text;
   document.getElementById("modalOverlay").style.display="flex";
 }
+
 function closeModal(){document.getElementById("modalOverlay").style.display="none"}
 
 function createFloat(e,text){
@@ -364,8 +406,10 @@ function claimTapTask(){
   const key="tap50_"+userId+"_"+new Date().toDateString();
   if(sessionStorage.getItem(key))return showPopup("Already claimed");
   if(taps<50)return showPopup("Need 50 taps");
-  coins+=150;xp+=100;sessionStorage.setItem(key,"1");
-  modal("✅","Mission Complete","+150 points");
+  coins+=xp>=1000?250:150;
+  xp+=100;
+  sessionStorage.setItem(key,"1");
+  modal("✅","Mission Complete","+ Mission reward");
   save();refresh();
 }
 
@@ -381,19 +425,46 @@ function shareTelegram(){
   window.open("https://t.me/share/url?url="+encodeURIComponent(link)+"&text="+encodeURIComponent(msg),"_blank");
 }
 
-function joinHQ(){window.open(telegramUrl,"_blank")}
-function viewToken(){window.open(pumpUrl,"_blank")}
-
 function showPage(p){
-  ["home","tasks","invite","wallet"].forEach(x=>{
+  ["home","tasks","invite","gang"].forEach(x=>{
     document.getElementById(x+"Page").classList.add("hidden");
     document.getElementById("nav"+cap(x)).classList.remove("active");
   });
   document.getElementById(p+"Page").classList.remove("hidden");
   document.getElementById("nav"+cap(p)).classList.add("active");
   if(p==="home")loadLeaderboard();
+  if(p==="gang")renderGang();
 }
+
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+
+function renderGang(){
+  const gangGrid=document.getElementById("gangGrid");
+  const skinsGrid=document.getElementById("skinsGrid");
+  if(!gangGrid||!skinsGrid)return;
+
+  gangGrid.innerHTML=gang.map(c=>{
+    const open=xp>=c.unlock;
+    return `<div class="gang-card ${open?"":"locked"}">
+      <div class="badge ${open?"unlocked":""}">${open?"OPEN":c.unlock+" XP"}</div>
+      <div class="gang-icon">${open?c.icon:"🔒"}</div>
+      <div class="gang-name">${c.name}</div>
+      <div class="gang-role">${c.role}</div>
+      <div class="gang-desc">${c.desc}</div>
+    </div>`;
+  }).join("");
+
+  skinsGrid.innerHTML=skins.map(s=>{
+    const open=xp>=s.unlock;
+    return `<div class="gang-card ${open?"":"locked"}">
+      <div class="badge ${open?"unlocked":""}">${open?"OPEN":s.unlock+" XP"}</div>
+      <div class="gang-icon">${open?s.icon:"🔒"}</div>
+      <div class="gang-name">${s.name}</div>
+      <div class="gang-role">${s.role}</div>
+      <div class="gang-desc">${s.desc}</div>
+    </div>`;
+  }).join("");
+}
 
 async function loadLeaderboard(){
   try{
