@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V8.3 Images</title>
+<title>DelayDoge V8.4 Buffered Sync</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -170,7 +170,7 @@ body{min-height:100vh;background:linear-gradient(180deg,#050814,#101b33,#070b18)
 <script>
 const API_BASE = window.location.origin;
 let tg=null,tgUser=null,referralCode=null,userId=null;
-let coins=0,xp=0,taps=0,streak=0,energy=100,combo=1,lastTapTime=0,previousRank="Rookie",saveTimer=null;
+let coins=0,xp=0,taps=0,streak=0,energy=100,combo=1,lastTapTime=0,previousRank="Rookie",syncPending=false;
 
 const statuses=[
 "Package moved 2 meters. Bullish 📦",
@@ -286,13 +286,16 @@ function applyPlayer(p){
 function payload(){return{userId,points:coins,coins,xp,taps,streak,energy,rank:getRank(),telegram:getTelegramProfile()};}
 
 function save(){
-  clearTimeout(saveTimer);
-  saveTimer=setTimeout(syncSaveNow,600);
+  syncPending=true;
 }
 
 async function syncSaveNow(){
   if(!userId)return;
-  try{await api("/save",{method:"POST",body:JSON.stringify(payload())});}catch(e){}
+  try{
+    await api("/save",{method:"POST",body:JSON.stringify(payload())});
+  }catch(e){
+    syncPending=true;
+  }
 }
 
 function refresh(){
@@ -341,7 +344,8 @@ function tapDeliver(e){
   if(taps>0 && taps%18===0)characterEvent();
   if(navigator.vibrate)navigator.vibrate(30);
 
-  save();refresh();
+  save();
+  refresh();
 }
 
 function characterEvent(){
@@ -355,7 +359,8 @@ function characterEvent(){
   modal(c.icon,c.name,c.text);
   if(c.type==="bad")document.getElementById("gameCard").classList.add("shake");
   setTimeout(()=>document.getElementById("gameCard").classList.remove("shake"),300);
-  save();refresh();
+  save();
+  refresh();
 }
 
 function openBox(){
@@ -365,7 +370,8 @@ function openBox(){
   if(r<0.55)b=boxes[0]; else if(r<0.80)b=boxes[1]; else if(r<0.94)b=boxes[2]; else if(r<0.985)b=boxes[3]; else b=boxes[4];
   coins+=b.coins; xp+=b.xp;
   modal(b.icon,b.name,b.coins?`You found +${b.coins} points and +${b.xp} XP`:"You got rugged. Nothing 😂");
-  save();refresh();
+  save();
+  refresh();
 }
 
 function manualBox(){
@@ -488,7 +494,30 @@ function showPopup(t){
   setTimeout(()=>p.classList.remove("show"),1100);
 }
 
-setInterval(()=>{if(energy<100&&userId){energy++;save();refresh()}},5000);
+setInterval(()=>{
+  if(energy<100&&userId){
+    energy++;
+    save();
+    refresh();
+  }
+},5000);
+
+setInterval(()=>{
+  if(syncPending&&userId){
+    syncPending=false;
+    syncSaveNow();
+  }
+},5000);
+
+window.addEventListener("beforeunload",()=>{
+  if(userId&&syncPending){
+    navigator.sendBeacon(
+      API_BASE+"/save",
+      new Blob([JSON.stringify(payload())],{type:"application/json"})
+    );
+  }
+});
+
 setInterval(()=>{if(userId)loadLeaderboard()},10000);
 
 bootTelegram();
