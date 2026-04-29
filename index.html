@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V8.4 Buffered Sync</title>
+<title>DelayDoge V8.5 Main Character</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -19,8 +19,46 @@ body{min-height:100vh;background:linear-gradient(180deg,#050814,#101b33,#070b18)
 .coins{font-size:42px;font-weight:900;color:#f7c843;margin:5px 0}
 .sub{font-size:13px;color:#cbd8ff}
 .game-card{background:#0f1b33;border:1px solid #2b4376;border-radius:30px;padding:20px;text-align:center;position:relative;overflow:hidden;box-shadow:0 0 35px rgba(0,0,0,.45)}
-.mascot{width:215px;height:215px;border-radius:50%;margin:8px auto 18px;background:radial-gradient(circle,#f7c843,#d88922);display:flex;align-items:center;justify-content:center;font-size:98px;border:6px solid #203869;box-shadow:0 0 35px rgba(247,200,67,.28);user-select:none;cursor:pointer;touch-action:manipulation}
-.mascot:active{transform:scale(.94)}
+
+.mascot{
+width:215px;
+height:215px;
+border-radius:50%;
+margin:8px auto 18px;
+background:radial-gradient(circle,#f7c843,#d88922);
+display:flex;
+align-items:center;
+justify-content:center;
+border:6px solid #203869;
+box-shadow:0 0 35px rgba(247,200,67,.28);
+user-select:none;
+cursor:pointer;
+touch-action:manipulation;
+overflow:hidden;
+position:relative;
+transition:.15s;
+animation:idleFloat 2.4s ease-in-out infinite;
+}
+
+.mascot:active{
+transform:scale(.94);
+box-shadow:0 0 48px rgba(247,200,67,.6);
+}
+
+#mainDoge{
+width:94%;
+height:94%;
+object-fit:cover;
+border-radius:50%;
+pointer-events:none;
+filter:drop-shadow(0 0 10px rgba(0,0,0,.35));
+}
+
+@keyframes idleFloat{
+0%,100%{transform:translateY(0)}
+50%{transform:translateY(-5px)}
+}
+
 .tap-text{font-size:25px;font-weight:900;color:#f7c843;margin-bottom:8px}
 .combo{font-size:16px;font-weight:900;color:#35d07f;margin-bottom:10px}
 .status{min-height:58px;background:#081125;border:1px solid #2b4376;border-radius:18px;padding:13px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1.35;color:#dbe5ff;margin-bottom:14px}
@@ -107,10 +145,13 @@ body{min-height:100vh;background:linear-gradient(180deg,#050814,#101b33,#070b18)
     </div>
 
     <div class="game-card" id="gameCard">
-      <div class="mascot" onclick="tapDeliver(event)" id="mascot">📦</div>
-      <div class="tap-text">TAP TO DELIVER</div>
+      <div class="mascot" onclick="tapDeliver(event)" id="mascot">
+        <img src="assets/characters/Gemini_Generated_Image_fforqkfforqkffor.png" id="mainDoge" alt="DelayDoge">
+      </div>
+
+      <div class="tap-text">TAP DELAYDOGE</div>
       <div class="combo" id="comboText">Combo: x1</div>
-      <div class="status" id="status">Your package is waiting...</div>
+      <div class="status" id="status">DelayDoge is waiting for the next package...</div>
 
       <div class="energy-top"><span>Energy</span><span id="energyText">100/100</span></div>
       <div class="energy-bar"><div class="energy-fill" id="energyFill"></div></div>
@@ -173,7 +214,7 @@ let tg=null,tgUser=null,referralCode=null,userId=null;
 let coins=0,xp=0,taps=0,streak=0,energy=100,combo=1,lastTapTime=0,previousRank="Rookie",syncPending=false;
 
 const statuses=[
-"Package moved 2 meters. Bullish 📦",
+"DelayDoge moved the package 2 meters. Bullish 📦",
 "Driver took lunch and vanished 🍔",
 "Out for delivery since yesterday 😂",
 "Package delayed emotionally 😭",
@@ -182,7 +223,7 @@ const statuses=[
 "Delivered to someone named Not You",
 "Customs opened it for emotional support.",
 "Package is doing side quests.",
-"The driver said diamond hands only."
+"DelayDoge said diamond hands only."
 ];
 
 const gang=[
@@ -428,7 +469,7 @@ async function copyInvite(){
 
 function shareTelegram(){
   const link=getInviteLink();
-  const msg=`I’m playing DelayDoge 🐶📦\nTap to deliver. Earn the meme.\n\n${link}`;
+  const msg=`I’m playing DelayDoge 🐶📦\nTap DelayDoge. Earn the meme.\n\n${link}`;
   window.open("https://t.me/share/url?url="+encodeURIComponent(link)+"&text="+encodeURIComponent(msg),"_blank");
 }
 
