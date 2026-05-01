@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V10 Effects</title>
+<title>DelayDoge V11 Secure Tap Sync</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -202,8 +202,9 @@ box-shadow:0 0 55px rgba(247,200,67,.38);animation:eventPop .22s ease-out;
 
 <script>
 const API_BASE = window.location.origin;
-let tg=null,tgUser=null,referralCode=null,userId=null;
+let tg=null,tgUser=null,referralCode=null,userId=null,tgInitData="";
 let coins=0,xp=0,taps=0,streak=0,energy=100,combo=1,lastTapTime=0,previousRank="Rookie",syncPending=false;
+let tapBuffer=0,syncInProgress=false;
 let slowModeUntil=0;
 
 const statuses=[
@@ -276,6 +277,7 @@ function bootTelegram(){
 function continueBoot(){
   try{tg.ready();tg.expand();}catch(e){}
   setTimeout(()=>{
+    tgInitData=tg?.initData||"";
     tgUser=tg?.initDataUnsafe?.user||null;
     referralCode=tg?.initDataUnsafe?.start_param||null;
     if(!tgUser||!tgUser.id)return showTelegramOnly();
@@ -297,7 +299,7 @@ function getTelegramProfile(){
 
 async function loginUser(){
   try{
-    const result=await api("/auth/telegram",{method:"POST",body:JSON.stringify({userId,telegram:getTelegramProfile(),user:getTelegramProfile(),referralCode})});
+    const result=await api("/auth/telegram",{method:"POST",body:JSON.stringify({initData:tgInitData,referralCode})});
     if(result.success&&(result.player||result.user)){
       applyPlayer(result.player||result.user);
       showPopup("Welcome "+(tgUser.first_name||tgUser.username||"Doge")+" 🐶");
@@ -317,14 +319,37 @@ function applyPlayer(p){
   renderGang();
 }
 
-function payload(){return{userId,points:coins,coins,xp,taps,streak,energy,rank:getRank(),telegram:getTelegramProfile()};}
+function payload(){return{initData:tgInitData};}
 
 function save(){syncPending=true}
 
 async function syncSaveNow(){
-  if(!userId)return;
-  try{await api("/save",{method:"POST",body:JSON.stringify(payload())})}
-  catch(e){syncPending=true}
+  if(!userId||!tgInitData)return;
+  if(tapBuffer>0){await syncTapBuffer();return;}
+  try{
+    const r=await api("/save",{method:"POST",body:JSON.stringify(payload())});
+    if(r.success&&(r.player||r.user))applyPlayer(r.player||r.user);
+  }catch(e){syncPending=true}
+}
+
+async function syncTapBuffer(){
+  if(syncInProgress||!userId||!tgInitData||tapBuffer<=0)return;
+  syncInProgress=true;
+  const tapsToSend=tapBuffer;
+  tapBuffer=0;
+  try{
+    const r=await api("/tap-sync",{method:"POST",body:JSON.stringify({initData:tgInitData,taps:tapsToSend})});
+    if(r.success&&(r.player||r.user)){
+      applyPlayer(r.player||r.user);
+      if(r.suspicious)showPopup("Too fast. Synced safely ⚠️");
+    }else{
+      tapBuffer+=tapsToSend;
+    }
+  }catch(e){
+    tapBuffer+=tapsToSend;
+    syncPending=true;
+  }
+  syncInProgress=false;
 }
 
 function refresh(){
@@ -384,6 +409,7 @@ function tapDeliver(e){
   if(taps>0 && taps%18===0)characterEvent();
   if(navigator.vibrate)navigator.vibrate(22);
 
+  tapBuffer++;
   save();
   refresh();
 }
@@ -493,7 +519,7 @@ function createFloat(e,text){
 
 async function dailyReward(){
   try{
-    const r=await api("/daily-reward",{method:"POST",body:JSON.stringify({userId})});
+    const r=await api("/daily-reward",{method:"POST",body:JSON.stringify({initData:tgInitData})});
     if(!r.success){showPopup(r.message||"Already claimed");return}
     if(r.player||r.user)applyPlayer(r.player||r.user);
     modal("🎁","Daily Reward","+ "+r.reward+" Delay Points","+ Daily reward",null);
@@ -501,15 +527,15 @@ async function dailyReward(){
   }catch(e){showPopup("Daily failed")}
 }
 
-function claimTapTask(){
-  const key="tap50_"+userId+"_"+new Date().toDateString();
-  if(sessionStorage.getItem(key))return showPopup("Already claimed");
-  if(taps<50)return showPopup("Need 50 taps");
-  coins+=xp>=1000?250:150;
-  xp+=100;
-  sessionStorage.setItem(key,"1");
-  modal("✅","Mission Complete","+ Mission reward","+ Points + XP",null);
-  save();refresh();
+async function claimTapTask(){
+  if(tapBuffer>0)await syncTapBuffer();
+  try{
+    const r=await api("/claim-tap-task",{method:"POST",body:JSON.stringify({initData:tgInitData})});
+    if(!r.success){showPopup(r.message||"Mission not ready");return}
+    if(r.player||r.user)applyPlayer(r.player||r.user);
+    modal("✅","Mission Complete","+ Mission reward","+"+r.reward+" Points +100 XP",null);
+    refresh();loadLeaderboard();
+  }catch(e){showPopup("Mission failed")}
 }
 
 function getInviteLink(){return"https://t.me/DelayDogeGameBot?start="+encodeURIComponent(userId)}
@@ -589,23 +615,23 @@ function showPopup(t){
 setInterval(()=>{
   if(energy<100&&userId){
     energy++;
-    save();
+    syncPending=true;
     refresh();
   }
 },5000);
 
 setInterval(()=>{
-  if(syncPending&&userId){
-    syncPending=false;
-    syncSaveNow();
+  if(userId){
+    if(tapBuffer>0){syncTapBuffer();return;}
+    if(syncPending){syncPending=false;syncSaveNow();}
   }
 },5000);
 
 window.addEventListener("beforeunload",()=>{
-  if(userId&&syncPending){
+  if(userId&&tgInitData&&tapBuffer>0){
     navigator.sendBeacon(
-      API_BASE+"/save",
-      new Blob([JSON.stringify(payload())],{type:"application/json"})
+      API_BASE+"/tap-sync",
+      new Blob([JSON.stringify({initData:tgInitData,taps:tapBuffer})],{type:"application/json"})
     );
   }
 });
