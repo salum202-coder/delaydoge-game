@@ -47,19 +47,25 @@ function verifyTelegram(initData) {
   params.delete("hash");
 
   const dataCheckString = [...params.entries()]
-    .sort()
+    .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, v]) => `${k}=${v}`)
     .join("\n");
 
-  const secret = crypto.createHash("sha256").update(BOT_TOKEN).digest();
+  const secretKey = crypto
+    .createHmac("sha256", "WebAppData")
+    .update(BOT_TOKEN)
+    .digest();
 
-  const hmac = crypto
-    .createHmac("sha256", secret)
+  const calculatedHash = crypto
+    .createHmac("sha256", secretKey)
     .update(dataCheckString)
     .digest("hex");
 
   try {
-    return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(hash));
+    return crypto.timingSafeEqual(
+      Buffer.from(calculatedHash, "hex"),
+      Buffer.from(hash, "hex")
+    );
   } catch {
     return false;
   }
