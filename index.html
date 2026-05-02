@@ -286,9 +286,13 @@ function continueBoot() {
     tgUser = tg?.initDataUnsafe?.user || null;
     referralCode = tg?.initDataUnsafe?.start_param || null;
 
-    if (!tgUser || !tgUser.id || !tgInitData) {
-      return showTelegramOnly();
-    }
+    if (!tgUser || !tgUser.id) {
+  return showTelegramOnly();
+}
+
+if (!tgInitData) {
+  console.warn("Telegram initData is empty");
+}
 
     userId = "tg_" + tgUser.id;
 
