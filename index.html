@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V13 Stable</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<title>DelayDoge V14 Fast</title>
+<script src="[https://telegram.org/js/telegram-web-app.js](https://telegram.org/js/telegram-web-app.js)"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
@@ -43,7 +43,7 @@ transition:.15s;animation:idleFloat 2.4s ease-in-out infinite;
 .status{min-height:58px;background:#081125;border:1px solid #2b4376;border-radius:18px;padding:13px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1.35;color:#dbe5ff;margin-bottom:14px}
 .energy-top{display:flex;justify-content:space-between;font-size:13px;color:#9fb4ef;margin-bottom:6px}
 .energy-bar{width:100%;height:14px;background:#081125;border-radius:999px;overflow:hidden;border:1px solid #2b4376}
-.energy-fill{height:100%;width:100%;background:linear-gradient(90deg,#35d07f,#f7c843);transition:.2s}
+.energy-fill{height:100%;width:100%;background:linear-gradient(90deg,#35d07f,#f7c843);transition:.1s}
 .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:13px}
 .box{background:#081125;border:1px solid #2b4376;border-radius:17px;padding:12px 8px}
 .small{font-size:11px;color:#9fb4ef;margin-bottom:5px}
@@ -201,7 +201,7 @@ box-shadow:0 0 55px rgba(247,200,67,.38);animation:eventPop .22s ease-out;
 </div>
 
 <script>
-const API_BASE = "https://delaydoge-api.onrender.com";
+const API_BASE = "[https://delaydoge-api.onrender.com](https://delaydoge-api.onrender.com)";
 
 let tg = null;
 let tgUser = null;
@@ -228,29 +228,13 @@ const statuses = [
   "Tracking says: still suffering",
   "Warehouse forgot it exists 💀",
   "Delivered to someone named Not You",
-  "Customs opened it for emotional support.",
-  "Package is doing side quests.",
-  "DelayDoge said diamond hands only."
+  "Customs opened it for emotional support."
 ];
 
 const gang = [
-  {icon:"🐶",img:"assets/characters/delaydoge-official.png",name:"DelayDoge",role:"The Main Legend",desc:"Cold, late, and proud. Every delay makes him stronger.",unlock:0},
-  {icon:"⚡",img:"assets/characters/express-cat.png",name:"Express Cat",role:"The Rival",desc:"Fast and furious. Gives speed challenge rewards.",unlock:300},
-  {icon:"🛃",img:"assets/characters/customs-boss.png",name:"Customs Boss",role:"The Gatekeeper",desc:"Stops packages for no reason. Boss event enemy.",unlock:1800},
-  {icon:"😡",img:"assets/characters/angry-karen.png",name:"Angry Karen",role:"Queen of Complaints",desc:"Resets combo and files complaint forms.",unlock:2400},
-  {icon:"🚦",img:"assets/characters/traffic-raccoon.png",name:"Traffic Raccoon",role:"Chaos Worker",desc:"Causes random traffic just for fun.",unlock:4000},
-  {icon:"📦",name:"Parcel Pete",role:"The Veteran",desc:"Old delivery dog. Sometimes gives free boxes.",unlock:700},
-  {icon:"😴",name:"Sleepy Doge",role:"The Nap Master",desc:"Always sleepy, always late. Gives XP naps.",unlock:1200},
-  {icon:"🧭",name:"Lost Driver",role:"Wrong Turn Expert",desc:"Always lost. Can give random good or bad events.",unlock:3200}
-];
-
-const skins = [
-  {icon:"💼",name:"CEO Doge",role:"+ Mission Rewards",desc:"Business class delay. Earn more from tasks.",unlock:1000},
-  {icon:"🥷",name:"Ninja Doge",role:"+ Box Chance",desc:"Silent delivery. Better mystery box luck.",unlock:1800},
-  {icon:"🚀",name:"Space Doge",role:"+ XP Boost",desc:"Package lost in orbit. More XP from taps.",unlock:3000},
-  {icon:"🌺",name:"Hawaii Doge",role:"+ Energy Saver",desc:"Maximum chill. Energy drains slower.",unlock:4500},
-  {icon:"✈️",name:"Pilot Doge",role:"+ Random Airdrop",desc:"Drops crates from the sky.",unlock:6000},
-  {icon:"🎸",name:"Rockstar Doge",role:"+ Combo Boost",desc:"Crowd hype. Combos hit harder.",unlock:8000}
+  {icon:"🐶",img:"assets/characters/delaydoge-official.png",name:"DelayDoge",role:"The Main Legend",desc:"Cold, late, and proud.",unlock:0},
+  {icon:"⚡",img:"assets/characters/express-cat.png",name:"Express Cat",role:"The Rival",desc:"Fast and furious.",unlock:300},
+  {icon:"🛃",img:"assets/characters/customs-boss.png",name:"Customs Boss",role:"The Gatekeeper",desc:"Stops packages.",unlock:1800}
 ];
 
 function showTelegramOnly() {
@@ -261,7 +245,6 @@ function showTelegramOnly() {
 
 function bootTelegram() {
   tg = window.Telegram?.WebApp || null;
-
   if (!tg) {
     setTimeout(() => {
       tg = window.Telegram?.WebApp || null;
@@ -270,7 +253,6 @@ function bootTelegram() {
     }, 1000);
     return;
   }
-
   continueBoot();
 }
 
@@ -283,15 +265,10 @@ function continueBoot() {
   setTimeout(() => {
     tgInitData = tg?.initData || "";
     tgUser = tg?.initDataUnsafe?.user || null;
-    referralCode = tg?.initDataUnsafe?.start_param || null;
-
-    if (!tgUser || !tgUser.id) {
-      return showTelegramOnly();
-    }
-
+    
+    if (!tgUser || !tgUser.id) return showTelegramOnly();
+    
     userId = "tg_" + tgUser.id;
-
-    renderGang();
     refresh();
     loginUser();
   }, 500);
@@ -299,19 +276,11 @@ function continueBoot() {
 
 async function api(path, options = {}) {
   const res = await fetch(API_BASE + path, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    },
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options
   });
-
   const data = await res.json().catch(() => ({}));
-
-  if (!res.ok && !data.error && !data.message) {
-    data.error = "Request failed";
-  }
-
+  if (!res.ok && !data.error) data.error = "Request failed";
   return data;
 }
 
@@ -319,50 +288,30 @@ async function loginUser() {
   try {
     const result = await api("/auth", {
       method: "POST",
-      body: JSON.stringify({
-        initData: tgInitData
-      })
+      body: JSON.stringify({ initData: tgInitData })
     });
 
     if (result.error || !result.player) {
-      showPopup(result.error || "Login failed ⚠️");
-      setFeed("Login failed. Open from Telegram button.");
+      setFeed("Login failed.");
       return;
     }
 
+    // هنا فقط نقوم بجلب البيانات لأول مرة من السيرفر
     applyPlayer(result.player);
-
-    showPopup("Welcome " + (tgUser.first_name || tgUser.username || "Doge") + " 🐶");
-    setFeed("Player loaded safely ✅<br>Your progress is saved on the server.");
+    setFeed("Player loaded safely ✅");
   } catch (e) {
-    showPopup("Server sync issue");
-    setFeed("Server sync issue. Try again from Telegram.");
+    setFeed("Server sync issue.");
   }
-
-  refresh();
 }
 
 function applyPlayer(p) {
   if (!p) return;
-
   coins = Number(p.points ?? 0);
   xp = Number(p.xp ?? 0);
   taps = Number(p.taps ?? 0);
   energy = Number(p.energy ?? 100);
-  level = Number(p.level ?? calculateLevel(xp));
-
-  if (!Number.isFinite(coins)) coins = 0;
-  if (!Number.isFinite(xp)) xp = 0;
-  if (!Number.isFinite(taps)) taps = 0;
-  if (!Number.isFinite(energy)) energy = 100;
-  if (!Number.isFinite(level)) level = calculateLevel(xp);
-
-  renderGang();
+  level = Number(p.level ?? Math.floor(Math.sqrt(xp / 100)) + 1);
   refresh();
-}
-
-function calculateLevel(value) {
-  return Math.floor(Math.sqrt(Number(value || 0) / 100)) + 1;
 }
 
 function refresh() {
@@ -372,127 +321,84 @@ function refresh() {
   document.getElementById("level").innerText = level;
   document.getElementById("energyText").innerText = energy + "/100";
   document.getElementById("energyFill").style.width = Math.max(0, Math.min(100, energy)) + "%";
-  document.getElementById("rank").innerText = getRank();
-
-  if (userId) {
-    document.getElementById("inviteLink").innerText = getInviteLink();
-  }
-
-  renderGang();
 }
 
-function getRank() {
-  if (xp >= 10000) return "Delay King";
-  if (xp >= 5000) return "Delivery Legend";
-  if (xp >= 2500) return "Customs Boss";
-  if (xp >= 1000) return "Lost Parcel";
-  if (xp >= 300) return "Delayed";
-  return "Rookie";
-}
-
+// ==========================================
+// التحديث الفوري المباشر - (السبب في زيادة الرقم فوراً)
+// ==========================================
 function tapDeliver(e) {
-  if (!userId || !tgUser) {
-    showPopup("Open from Telegram");
-    return;
-  }
-
-  if (energy <= 0) {
-    document.getElementById("status").innerText = "Energy empty. Wait for recharge ⚡";
-    return;
-  }
+  if (!userId || !tgUser) return;
+  if (energy <= 0) return;
 
   const now = Date.now();
-
   combo = now - lastTapTime < 650 ? Math.min(combo + 1, 5) : 1;
   lastTapTime = now;
 
-  /* ======== OPTIMISTIC UI UPDATE (الحل السحري لسرعة الاستجابة) ======== */
+  // تحديث الأرقام داخلياً فوراً وبدون انتظار
   coins += combo;
   xp += (combo * 2);
-  energy = Math.max(0, energy - 1);
+  energy -= 1;
   taps += 1;
-  level = calculateLevel(xp);
-  
-  refresh(); 
-  /* ==================================================================== */
+  level = Math.floor(Math.sqrt(xp / 100)) + 1;
 
+  // إجبار واجهة المستخدم على التغيير في نفس اللحظة
+  document.getElementById("coins").innerText = coins;
+  document.getElementById("xp").innerText = xp;
+  document.getElementById("taps").innerText = taps;
+  document.getElementById("level").innerText = level;
+  document.getElementById("energyText").innerText = energy + "/100";
+  document.getElementById("energyFill").style.width = Math.max(0, Math.min(100, energy)) + "%";
+
+  // مؤثرات بصرية
   const comboText = document.getElementById("comboText");
   comboText.innerText = combo >= 4 ? "🔥 FIRE COMBO x" + combo : "Combo: x" + combo;
   comboText.classList.toggle("fire", combo >= 4);
-
-  document.getElementById("status").innerText = statuses[Math.floor(Math.random() * statuses.length)];
 
   createFloat(e, "+" + combo);
   createCoinBurst(e);
   pulseMascot();
 
-  if (combo >= 3) {
-    document.getElementById("gameCard").classList.add("flash");
-    setTimeout(() => document.getElementById("gameCard").classList.remove("flash"), 350);
-  }
-
   if (navigator.vibrate) navigator.vibrate(22);
 
+  // تسجيل الضغطة لإرسالها في الخلفية
   tapBuffer++;
-
-  // يستمر في تجميع الضغطات وإرسالها للسيرفر للحماية من الحظر
   if (tapBuffer >= 10) {
     syncTapBuffer();
   }
 }
 
+// ==========================================
+// إرسال البيانات للسيرفر بصمت تام
+// ==========================================
 async function syncTapBuffer() {
-  if (syncInProgress || !userId || !tgUser || tapBuffer <= 0) return;
+  if (syncInProgress || tapBuffer <= 0) return;
 
   syncInProgress = true;
-
   const tapsToSend = Math.min(tapBuffer, 30);
   tapBuffer -= tapsToSend;
 
   try {
     const r = await api("/tap", {
       method: "POST",
-      body: JSON.stringify({
-        initData: tgInitData,
-        taps: tapsToSend
-      })
+      body: JSON.stringify({ initData: tgInitData, taps: tapsToSend })
     });
 
     if (!r.error) {
-      if (tapBuffer === 0) {
-          coins = Number(r.points ?? coins);
-          xp = Number(r.xp ?? xp);
-          taps = Number(r.taps ?? taps);
-          energy = Number(r.energy ?? energy);
-          level = Number(r.level ?? calculateLevel(xp));
-          combo = Number(r.combo ?? combo);
-          
-          const comboText = document.getElementById("comboText");
-          comboText.innerText = combo >= 4
-            ? "🔥 FIRE COMBO x" + combo
-            : "Combo: x" + combo;
-
-          comboText.classList.toggle("fire", combo >= 4);
-          refresh();
-      }
-
+      // لا نقم بتعديل النقاط هنا أبداً! المتصفح هو من يحسب النقاط أثناء اللعب
+      // هذا يمنع أي تعليق أو تراجع في الأرقام
       document.getElementById("status").innerText = "Synced safely ✅";
     } else {
-      tapBuffer += tapsToSend;
-      showPopup(r.error || r.message || "Sync failed");
+      tapBuffer += tapsToSend; // إعادة المحاولة إذا فشل
     }
   } catch (e) {
     tapBuffer += tapsToSend;
-    showPopup("Sync issue");
   }
 
   syncInProgress = false;
-
-  if (tapBuffer > 0) {
-    setTimeout(syncTapBuffer, 250);
-  }
+  if (tapBuffer > 0) setTimeout(syncTapBuffer, 250);
 }
 
+// المؤثرات البصرية
 function pulseMascot() {
   const m = document.getElementById("mascot");
   m.classList.remove("tap-pulse");
@@ -510,15 +416,12 @@ function createCoinBurst(e) {
   for (let i = 0; i < 6; i++) {
     const p = document.createElement("div");
     p.className = "coin-particle";
-
     const angle = Math.random() * Math.PI * 2;
     const dist = 35 + Math.random() * 38;
-
     p.style.left = baseX + "px";
     p.style.top = baseY + "px";
     p.style.setProperty("--dx", Math.cos(angle) * dist + "px");
     p.style.setProperty("--dy", Math.sin(angle) * dist - 45 + "px");
-
     card.appendChild(p);
     setTimeout(() => p.remove(), 720);
   }
@@ -529,98 +432,13 @@ function createFloat(e, text) {
   const f = document.createElement("div");
   f.className = "float";
   f.innerText = text;
-
   const rect = card.getBoundingClientRect();
   const x = e.clientX ? e.clientX - rect.left : rect.width / 2;
   const y = e.clientY ? e.clientY - rect.top : 160;
-
   f.style.left = x + "px";
   f.style.top = y + "px";
-
   card.appendChild(f);
   setTimeout(() => f.remove(), 800);
-}
-
-function renderGang() {
-  const gangGrid = document.getElementById("gangGrid");
-  const skinsGrid = document.getElementById("skinsGrid");
-
-  if (!gangGrid || !skinsGrid) return;
-
-  gangGrid.innerHTML = gang.map(c => {
-    const open = xp >= c.unlock;
-
-    return `<div class="gang-card ${open ? "" : "locked"}">
-      <div class="badge ${open ? "unlocked" : ""}">${open ? "OPEN" : c.unlock + " XP"}</div>
-      ${open && c.img ? `<img class="gang-img" src="${c.img}" alt="${c.name}">` : `<div class="gang-icon">${open ? c.icon : "🔒"}</div>`}
-      <div class="gang-name">${c.name}</div>
-      <div class="gang-role">${c.role}</div>
-      <div class="gang-desc">${c.desc}</div>
-    </div>`;
-  }).join("");
-
-  skinsGrid.innerHTML = skins.map(s => {
-    const open = xp >= s.unlock;
-
-    return `<div class="gang-card ${open ? "" : "locked"}">
-      <div class="badge ${open ? "unlocked" : ""}">${open ? "OPEN" : s.unlock + " XP"}</div>
-      <div class="gang-icon">${open ? s.icon : "🔒"}</div>
-      <div class="gang-name">${s.name}</div>
-      <div class="gang-role">${s.role}</div>
-      <div class="gang-desc">${s.desc}</div>
-    </div>`;
-  }).join("");
-}
-
-function modal(icon, title, text, effect = "", img = null) {
-  const image = document.getElementById("eventImage");
-  const modalIcon = document.getElementById("modalIcon");
-
-  if (img) {
-    image.src = img;
-    image.style.display = "block";
-    modalIcon.style.display = "none";
-  } else {
-    image.style.display = "none";
-    modalIcon.style.display = "block";
-    modalIcon.innerText = icon;
-  }
-
-  document.getElementById("modalTitle").innerText = title;
-  document.getElementById("modalText").innerText = text;
-  document.getElementById("eventEffect").innerText = effect || "";
-  document.getElementById("modalOverlay").style.display = "flex";
-}
-
-function closeModal() {
-  document.getElementById("modalOverlay").style.display = "none";
-}
-
-function comingSoon() {
-  showPopup("Coming soon 🚧");
-}
-
-function getInviteLink() {
-  return "https://t.me/DelayDogeGameBot?start=" + encodeURIComponent(userId || "delaydoge");
-}
-
-async function copyInvite() {
-  try {
-    await navigator.clipboard.writeText(getInviteLink());
-    showPopup("Invite copied 🔗");
-  } catch (e) {
-    showPopup("Copy failed");
-  }
-}
-
-function shareTelegram() {
-  const link = getInviteLink();
-  const msg = `I’m playing DelayDoge 🐶📦\nTap DelayDoge. Earn the meme.\n\n${link}`;
-
-  window.open(
-    "https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(msg),
-    "_blank"
-  );
 }
 
 function showPage(p) {
@@ -628,48 +446,19 @@ function showPage(p) {
     document.getElementById(x + "Page").classList.add("hidden");
     document.getElementById("nav" + cap(x)).classList.remove("active");
   });
-
   document.getElementById(p + "Page").classList.remove("hidden");
   document.getElementById("nav" + cap(p)).classList.add("active");
-
-  if (p === "gang") renderGang();
 }
 
-function cap(s) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-function setFeed(html) {
-  document.getElementById("feed").innerHTML = html;
-}
-
-function showPopup(t) {
-  const p = document.getElementById("popup");
-  p.innerText = t;
-  p.classList.add("show");
-  setTimeout(() => p.classList.remove("show"), 1200);
-}
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function setFeed(html) { document.getElementById("feed").innerHTML = html; }
+function comingSoon() { alert("Coming soon"); }
 
 setInterval(() => {
-  if (tapBuffer > 0) {
-    syncTapBuffer();
-  }
+  if (tapBuffer > 0) syncTapBuffer();
 }, 2000);
-
-window.addEventListener("beforeunload", () => {
-  if (userId && tgUser && tapBuffer > 0) {
-    navigator.sendBeacon(
-      API_BASE + "/tap",
-      new Blob(
-        [JSON.stringify({ initData: tgInitData, taps: Math.min(tapBuffer, 30) })],
-        { type: "application/json" }
-      )
-    );
-  }
-});
 
 bootTelegram();
 </script>
-
 </body>
 </html>
