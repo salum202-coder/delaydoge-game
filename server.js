@@ -201,6 +201,96 @@ app.post("/tap-sync", async (req, res) => {
     }
 
     const player = result.player;
+    const now = Date.now();
+
+    let energy = safeNumber(player.energy, 100);
+    let points = safeNumber(player.points, 0);
+    let xp = safeNumber(player.xp, 0);
+    let totalTaps = safeNumber(player.taps, 0);
+
+    let combo = safeNumber(player.combo, 1);
+    let lastTapAt = safeNumber(player.lastTapAt, 0);
+
+    const requestedTaps = Math.floor(safeNumber(taps, 0));
+    const safeTaps = Math.max(0, Math.min(requestedTaps, 30));
+    const allowedTaps = Math.min(safeTaps, energy);
+
+    let pointsGain = 0;
+    let xpGain = 0;
+
+    for (let i = 0; i < allowedTaps; i++) {
+      const virtualTapTime = now + i * 120;
+      const gap = lastTapAt ? virtualTapTime - lastTapAt : 9999;
+
+      if (gap <= 900) {
+        combo = Math.min(combo + 1, 5);
+      } else {
+        combo = 1;
+      }
+
+      const tapPoints = combo;
+      const tapXp = combo * 2;
+
+      pointsGain += tapPoints;
+      xpGain += tapXp;
+
+      lastTapAt = virtualTapTime;
+    }
+
+    points += pointsGain;
+    xp += xpGain;
+    energy = Math.max(0, energy - allowedTaps);
+    totalTaps += allowedTaps;
+
+    const level = calculateLevel(xp);
+
+    await db.collection("users").updateOne(
+      { userId: player.userId },
+      {
+        $set: {
+          points,
+          xp,
+          energy,
+          level,
+          combo,
+          lastTapAt,
+          unlockedCharacters: getUnlockedCharacters(level),
+          updatedAt: new Date()
+        },
+        $inc: {
+          taps: allowedTaps
+        }
+      }
+    );
+
+    res.json({
+      success: true,
+      points,
+      xp,
+      taps: totalTaps,
+      energy,
+      level,
+      combo,
+      multiplier: combo,
+      unlockedCharacters: getUnlockedCharacters(level),
+      gained: {
+        points: pointsGain,
+        xp: xpGain,
+        taps: allowedTaps
+      }
+    });
+
+  } catch (e) {
+    console.error("TAP SYNC ERROR:", e);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+});
+    }
+
+    const player = result.player;
 
     const currentEnergy = safeNumber(player.energy, 100);
     const currentPoints = safeNumber(player.points, 0);
