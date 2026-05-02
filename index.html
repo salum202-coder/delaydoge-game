@@ -449,7 +449,14 @@ async function syncTapBuffer() {
       taps = Number(r.taps ?? taps);
       energy = Number(r.energy ?? energy);
       level = Number(r.level ?? calculateLevel(xp));
+      combo = Number(r.combo ?? combo);
 
+const comboText = document.getElementById("comboText");
+comboText.innerText = combo >= 4 
+  ? "🔥 FIRE COMBO x" + combo 
+  : "Combo: x" + combo;
+
+comboText.classList.toggle("fire", combo >= 4);
       refresh();
 
       if (r.gained && r.gained.points > 0) {
