@@ -41,7 +41,14 @@ function verifyTelegram(initData) {
 
   const params = new URLSearchParams(initData);
   const hash = params.get("hash");
-
+console.log("INIT DATA CHECK:", {
+  hasInitData: !!initData,
+  initLength: initData ? initData.length : 0,
+  hasBotToken: !!BOT_TOKEN,
+  botTokenStart: BOT_TOKEN ? BOT_TOKEN.slice(0, 8) : null,
+  hasHash: !!hash,
+  hasUser: !!params.get("user")
+});
   if (!hash) return false;
 
   params.delete("hash");
