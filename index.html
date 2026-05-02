@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V11 Secure Tap Sync</title>
+<title>DelayDoge V12 Stable Sync</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -151,22 +151,22 @@ box-shadow:0 0 55px rgba(247,200,67,.38);animation:eventPop .22s ease-out;
       <div class="stats">
         <div class="box"><div class="small">XP</div><div class="num" id="xp">0</div></div>
         <div class="box"><div class="small">Taps</div><div class="num" id="taps">0</div></div>
-        <div class="box"><div class="small">Streak</div><div class="num" id="streak">0</div></div>
+        <div class="box"><div class="small">Level</div><div class="num" id="level">1</div></div>
       </div>
     </div>
 
     <div class="section">
       <h3>🔥 Live Feed</h3>
-      <div class="feed" id="feed">Loading...</div>
+      <div class="feed" id="feed">Loading player data...</div>
     </div>
   </div>
 
   <div id="tasksPage" class="hidden">
     <div class="section">
       <h3>✅ Daily Missions</h3>
-      <div class="task"><span>Tap 50 times</span><button class="btn" onclick="claimTapTask()">Claim</button></div>
-      <div class="task"><span>Daily Streak Reward</span><button class="btn" onclick="dailyReward()">Claim</button></div>
-      <div class="task"><span>Open Mystery Box</span><button class="btn" onclick="manualBox()">Open</button></div>
+      <div class="task"><span>Tap 50 times</span><button class="btn" onclick="comingSoon()">Claim</button></div>
+      <div class="task"><span>Daily Streak Reward</span><button class="btn" onclick="comingSoon()">Claim</button></div>
+      <div class="task"><span>Open Mystery Box</span><button class="btn" onclick="comingSoon()">Open</button></div>
       <button class="btn full dark" onclick="shareTelegram()">📨 Share DelayDoge</button>
     </div>
   </div>
@@ -174,7 +174,7 @@ box-shadow:0 0 55px rgba(247,200,67,.38);animation:eventPop .22s ease-out;
   <div id="invitePage" class="hidden">
     <div class="section">
       <h3>🔗 Invite & Earn</h3>
-      <p style="font-size:14px;color:#cbd8ff;line-height:1.6">Invite a friend. You earn 3000 points. Your friend earns 1000 points.</p>
+      <p style="font-size:14px;color:#cbd8ff;line-height:1.6">Invite a friend. Rewards will be activated soon.</p>
       <div class="invite-link" id="inviteLink"></div>
       <button class="btn full" onclick="copyInvite()">Copy Invite Link</button>
       <button class="btn full dark" onclick="shareTelegram()">Share to Telegram</button>
@@ -202,388 +202,348 @@ box-shadow:0 0 55px rgba(247,200,67,.38);animation:eventPop .22s ease-out;
 
 <script>
 const API_BASE = window.location.origin;
-let tg=null,tgUser=null,referralCode=null,userId=null,tgInitData="";
-let coins=0,xp=0,taps=0,streak=0,energy=100,combo=1,lastTapTime=0,previousRank="Rookie",syncPending=false;
-let tapBuffer=0,syncInProgress=false;
-let slowModeUntil=0;
 
-const statuses=[
-"DelayDoge moved the package 2 meters. Bullish 📦",
-"Driver took lunch and vanished 🍔",
-"Out for delivery since yesterday 😂",
-"Package delayed emotionally 😭",
-"Tracking says: still suffering",
-"Warehouse forgot it exists 💀",
-"Delivered to someone named Not You",
-"Customs opened it for emotional support.",
-"Package is doing side quests.",
-"DelayDoge said diamond hands only."
+let tg = null;
+let tgUser = null;
+let referralCode = null;
+let userId = null;
+let tgInitData = "";
+
+let coins = 0;
+let xp = 0;
+let taps = 0;
+let energy = 100;
+let level = 1;
+let combo = 1;
+let lastTapTime = 0;
+
+let tapBuffer = 0;
+let syncInProgress = false;
+let lastLocalTapAt = 0;
+
+const statuses = [
+  "DelayDoge moved the package 2 meters. Bullish 📦",
+  "Driver took lunch and vanished 🍔",
+  "Out for delivery since yesterday 😂",
+  "Package delayed emotionally 😭",
+  "Tracking says: still suffering",
+  "Warehouse forgot it exists 💀",
+  "Delivered to someone named Not You",
+  "Customs opened it for emotional support.",
+  "Package is doing side quests.",
+  "DelayDoge said diamond hands only."
 ];
 
-const gang=[
-{icon:"🐶",img:"assets/characters/delaydoge-official.png",name:"DelayDoge",role:"The Main Legend",desc:"Cold, late, and proud. Every delay makes him stronger.",unlock:0,type:"hero"},
-{icon:"⚡",img:"assets/characters/express-cat.png",name:"Express Cat",role:"The Rival",desc:"Fast and furious. Gives speed challenge rewards.",unlock:300,type:"hero"},
-{icon:"🛃",img:"assets/characters/customs-boss.png",name:"Customs Boss",role:"The Gatekeeper",desc:"Stops packages for no reason. Boss event enemy.",unlock:1800,type:"enemy"},
-{icon:"😡",img:"assets/characters/angry-karen.png",name:"Angry Karen",role:"Queen of Complaints",desc:"Resets combo and files complaint forms.",unlock:2400,type:"enemy"},
-{icon:"🚦",img:"assets/characters/traffic-raccoon.png",name:"Traffic Raccoon",role:"Chaos Worker",desc:"Causes random traffic just for fun.",unlock:4000,type:"enemy"},
-{icon:"📦",name:"Parcel Pete",role:"The Veteran",desc:"Old delivery dog. Sometimes gives free boxes.",unlock:700,type:"hero"},
-{icon:"😴",name:"Sleepy Doge",role:"The Nap Master",desc:"Always sleepy, always late. Gives XP naps.",unlock:1200,type:"hero"},
-{icon:"🧭",name:"Lost Driver",role:"Wrong Turn Expert",desc:"Always lost. Can give random good or bad events.",unlock:3200,type:"enemy"}
+const gang = [
+  {icon:"🐶",img:"assets/characters/delaydoge-official.png",name:"DelayDoge",role:"The Main Legend",desc:"Cold, late, and proud. Every delay makes him stronger.",unlock:0},
+  {icon:"⚡",img:"assets/characters/express-cat.png",name:"Express Cat",role:"The Rival",desc:"Fast and furious. Gives speed challenge rewards.",unlock:300},
+  {icon:"🛃",img:"assets/characters/customs-boss.png",name:"Customs Boss",role:"The Gatekeeper",desc:"Stops packages for no reason. Boss event enemy.",unlock:1800},
+  {icon:"😡",img:"assets/characters/angry-karen.png",name:"Angry Karen",role:"Queen of Complaints",desc:"Resets combo and files complaint forms.",unlock:2400},
+  {icon:"🚦",img:"assets/characters/traffic-raccoon.png",name:"Traffic Raccoon",role:"Chaos Worker",desc:"Causes random traffic just for fun.",unlock:4000},
+  {icon:"📦",name:"Parcel Pete",role:"The Veteran",desc:"Old delivery dog. Sometimes gives free boxes.",unlock:700},
+  {icon:"😴",name:"Sleepy Doge",role:"The Nap Master",desc:"Always sleepy, always late. Gives XP naps.",unlock:1200},
+  {icon:"🧭",name:"Lost Driver",role:"Wrong Turn Expert",desc:"Always lost. Can give random good or bad events.",unlock:3200}
 ];
 
-const skins=[
-{icon:"💼",name:"CEO Doge",role:"+ Mission Rewards",desc:"Business class delay. Earn more from tasks.",unlock:1000},
-{icon:"🥷",name:"Ninja Doge",role:"+ Box Chance",desc:"Silent delivery. Better mystery box luck.",unlock:1800},
-{icon:"🚀",name:"Space Doge",role:"+ XP Boost",desc:"Package lost in orbit. More XP from taps.",unlock:3000},
-{icon:"🌺",name:"Hawaii Doge",role:"+ Energy Saver",desc:"Maximum chill. Energy drains slower.",unlock:4500},
-{icon:"✈️",name:"Pilot Doge",role:"+ Random Airdrop",desc:"Drops crates from the sky.",unlock:6000},
-{icon:"🎸",name:"Rockstar Doge",role:"+ Combo Boost",desc:"Crowd hype. Combos hit harder.",unlock:8000}
+const skins = [
+  {icon:"💼",name:"CEO Doge",role:"+ Mission Rewards",desc:"Business class delay. Earn more from tasks.",unlock:1000},
+  {icon:"🥷",name:"Ninja Doge",role:"+ Box Chance",desc:"Silent delivery. Better mystery box luck.",unlock:1800},
+  {icon:"🚀",name:"Space Doge",role:"+ XP Boost",desc:"Package lost in orbit. More XP from taps.",unlock:3000},
+  {icon:"🌺",name:"Hawaii Doge",role:"+ Energy Saver",desc:"Maximum chill. Energy drains slower.",unlock:4500},
+  {icon:"✈️",name:"Pilot Doge",role:"+ Random Airdrop",desc:"Drops crates from the sky.",unlock:6000},
+  {icon:"🎸",name:"Rockstar Doge",role:"+ Combo Boost",desc:"Crowd hype. Combos hit harder.",unlock:8000}
 ];
 
-const characters=[
-{icon:"🐶",img:"assets/characters/delaydoge-official.png",name:"DelayDoge Blessing",text:"The king of delays rewards your patience.",effect:"+300 Points",type:"good",coins:300,xp:80,minXp:0},
-{icon:"⚡",img:"assets/characters/express-cat.png",name:"Express Cat Challenge",text:"Express Cat tried to outrun you.",effect:"+180 Points +60 XP",type:"good",coins:180,xp:60,minXp:300},
-{icon:"🛃",img:"assets/characters/customs-boss.png",name:"Customs Boss Inspection",text:"Your package is under inspection.",effect:"-10 Energy",type:"bad",energy:-10,minXp:1800},
-{icon:"😡",img:"assets/characters/angry-karen.png",name:"Angry Karen Complaint",text:"She wants to speak to the manager.",effect:"Combo Reset",type:"bad",comboReset:true,minXp:2400},
-{icon:"🚦",img:"assets/characters/traffic-raccoon.png",name:"Traffic Raccoon Jam",text:"Traffic Raccoon created a jam for fun.",effect:"-50 Points + Slow Mode",type:"bad",coins:-50,slow:true,minXp:4000},
-{icon:"📦",name:"Parcel Pete",text:"Found an old box.",effect:"+150 Points +50 XP",type:"good",coins:150,xp:50,minXp:700},
-{icon:"😴",name:"Sleepy Doge",text:"Nap bonus activated.",effect:"+100 XP",type:"good",xp:100,minXp:1200},
-{icon:"🧭",name:"Lost Driver",text:"Wrong turn somehow became useful.",effect:"+80 Points +20 XP",type:"good",coins:80,xp:20,minXp:3200}
-];
-
-const boxes=[
-{name:"Common Box",icon:"📦",coins:80,xp:40,rare:false},
-{name:"Rare Box",icon:"💎",coins:200,xp:120,rare:false},
-{name:"Epic Box",icon:"🚀",coins:500,xp:250,rare:true},
-{name:"Rugged Box",icon:"💀",coins:0,xp:0,rare:false},
-{name:"Golden Delay Box",icon:"👑",coins:1000,xp:500,rare:true}
-];
-
-function showTelegramOnly(){
-  document.getElementById("app").style.display="none";
-  document.getElementById("nav").style.display="none";
-  document.getElementById("telegramOnly").style.display="flex";
+function showTelegramOnly() {
+  document.getElementById("app").style.display = "none";
+  document.getElementById("nav").style.display = "none";
+  document.getElementById("telegramOnly").style.display = "flex";
 }
 
-function bootTelegram(){
-  tg=window.Telegram?.WebApp||null;
-  if(!tg){
-    setTimeout(()=>{tg=window.Telegram?.WebApp||null;if(!tg)return showTelegramOnly();continueBoot();},1500);
+function bootTelegram() {
+  tg = window.Telegram?.WebApp || null;
+
+  if (!tg) {
+    setTimeout(() => {
+      tg = window.Telegram?.WebApp || null;
+      if (!tg) return showTelegramOnly();
+      continueBoot();
+    }, 1000);
     return;
   }
+
   continueBoot();
 }
 
-function continueBoot(){
-  try{tg.ready();tg.expand();}catch(e){}
-  setTimeout(()=>{
-    tgInitData=tg?.initData||"";
-    tgUser=tg?.initDataUnsafe?.user||null;
-    referralCode=tg?.initDataUnsafe?.start_param||null;
-    if(!tgUser||!tgUser.id)return showTelegramOnly();
-    userId="tg_"+tgUser.id;
+function continueBoot() {
+  try {
+    tg.ready();
+    tg.expand();
+  } catch (e) {}
+
+  setTimeout(() => {
+    tgInitData = tg?.initData || "";
+    tgUser = tg?.initDataUnsafe?.user || null;
+    referralCode = tg?.initDataUnsafe?.start_param || null;
+
+    if (!tgUser || !tgUser.id || !tgInitData) {
+      return showTelegramOnly();
+    }
+
+    userId = "tg_" + tgUser.id;
+
     renderGang();
     refresh();
     loginUser();
-  },1500);
+  }, 500);
 }
 
-async function api(path,options={}){
-  const res=await fetch(API_BASE+path,{headers:{"Content-Type":"application/json",...(options.headers||{})},...options});
+async function api(path, options = {}) {
+  const res = await fetch(API_BASE + path, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    },
+    ...options
+  });
+
   return res.json();
 }
 
-function getTelegramProfile(){
-  return {id:tgUser.id,username:tgUser.username||"",first_name:tgUser.first_name||"",last_name:tgUser.last_name||"",language_code:tgUser.language_code||"",photo_url:tgUser.photo_url||""};
-}
+async function loginUser() {
+  try {
+    const result = await api("/auth/telegram", {
+      method: "POST",
+      body: JSON.stringify({
+        initData: tgInitData,
+        referralCode
+      })
+    });
 
-async function loginUser(){
-  try{
-    const result=await api("/auth/telegram",{method:"POST",body:JSON.stringify({initData:tgInitData,referralCode})});
-    if(result.success&&(result.player||result.user)){
-      applyPlayer(result.player||result.user);
-      showPopup("Welcome "+(tgUser.first_name||tgUser.username||"Doge")+" 🐶");
+    if (!result.success) {
+      showPopup("Login failed ⚠️");
+      return;
     }
-    await loadLeaderboard();
-  }catch(e){showPopup("Server sync issue")}
+
+    applyPlayer(result.player);
+
+    showPopup("Welcome " + (tgUser.first_name || tgUser.username || "Doge") + " 🐶");
+    setFeed("Player loaded safely ✅<br>Your progress is saved on the server.");
+  } catch (e) {
+    showPopup("Server sync issue");
+    setFeed("Server sync issue. Try again from Telegram.");
+  }
+
   refresh();
 }
 
-function applyPlayer(p){
-  coins=Number(p.points??p.coins)||0;
-  xp=Number(p.xp)||0;
-  taps=Number(p.taps)||0;
-  streak=Number(p.streak)||0;
-  energy=Number(p.energy); if(!Number.isFinite(energy))energy=100;
-  previousRank=p.rank||getRank();
+function applyPlayer(p) {
+  if (!p) return;
+
+  coins = Number(p.points ?? 0);
+  xp = Number(p.xp ?? 0);
+  taps = Number(p.taps ?? 0);
+  energy = Number(p.energy ?? 100);
+  level = Number(p.level ?? calculateLevel(xp));
+
+  if (!Number.isFinite(coins)) coins = 0;
+  if (!Number.isFinite(xp)) xp = 0;
+  if (!Number.isFinite(taps)) taps = 0;
+  if (!Number.isFinite(energy)) energy = 100;
+  if (!Number.isFinite(level)) level = calculateLevel(xp);
+
   renderGang();
+  refresh();
 }
 
-function payload(){return{initData:tgInitData};}
-
-function save(){syncPending=true}
-
-async function syncSaveNow(){
-  if(!userId||!tgInitData)return;
-  if(tapBuffer>0){await syncTapBuffer();return;}
-  try{
-    const r=await api("/save",{method:"POST",body:JSON.stringify(payload())});
-    if(r.success&&(r.player||r.user))applyPlayer(r.player||r.user);
-  }catch(e){syncPending=true}
+function calculateLevel(value) {
+  return Math.floor(Math.sqrt(Number(value || 0) / 100)) + 1;
 }
 
-async function syncTapBuffer(){
-  if(syncInProgress||!userId||!tgInitData||tapBuffer<=0)return;
-  syncInProgress=true;
-  const tapsToSend=tapBuffer;
-  tapBuffer=0;
-  try{
-    const r=await api("/tap-sync",{method:"POST",body:JSON.stringify({initData:tgInitData,taps:tapsToSend})});
-    if(r.success&&(r.player||r.user)){
-      applyPlayer(r.player||r.user);
-      if(r.suspicious)showPopup("Too fast. Synced safely ⚠️");
-    }else{
-      tapBuffer+=tapsToSend;
-    }
-  }catch(e){
-    tapBuffer+=tapsToSend;
-    syncPending=true;
+function refresh() {
+  document.getElementById("coins").innerText = coins;
+  document.getElementById("xp").innerText = xp;
+  document.getElementById("taps").innerText = taps;
+  document.getElementById("level").innerText = level;
+  document.getElementById("energyText").innerText = energy + "/100";
+  document.getElementById("energyFill").style.width = Math.max(0, Math.min(100, energy)) + "%";
+  document.getElementById("rank").innerText = getRank();
+
+  if (userId) {
+    document.getElementById("inviteLink").innerText = getInviteLink();
   }
-  syncInProgress=false;
-}
 
-function refresh(){
-  document.getElementById("coins").innerText=coins;
-  document.getElementById("xp").innerText=xp;
-  document.getElementById("taps").innerText=taps;
-  document.getElementById("streak").innerText=streak;
-  document.getElementById("energyText").innerText=energy+"/100";
-  document.getElementById("energyFill").style.width=Math.max(0,Math.min(100,energy))+"%";
-  document.getElementById("rank").innerText=getRank();
-  if(userId)document.getElementById("inviteLink").innerText=getInviteLink();
   renderGang();
 }
 
-function getRank(){
-  if(xp>=10000)return"Delay King";
-  if(xp>=5000)return"Delivery Legend";
-  if(xp>=2500)return"Customs Boss";
-  if(xp>=1000)return"Lost Parcel";
-  if(xp>=300)return"Delayed";
-  return"Rookie";
+function getRank() {
+  if (xp >= 10000) return "Delay King";
+  if (xp >= 5000) return "Delivery Legend";
+  if (xp >= 2500) return "Customs Boss";
+  if (xp >= 1000) return "Lost Parcel";
+  if (xp >= 300) return "Delayed";
+  return "Rookie";
 }
 
-function tapDeliver(e){
-  if(energy<=0){document.getElementById("status").innerText="Energy empty. Claim daily reward ⚡";return}
-
-  const now=Date.now();
-  if(now<slowModeUntil && now-lastTapTime<900){
-    document.getElementById("status").innerText="Traffic jam! Slow down 🚦";
+function tapDeliver(e) {
+  if (!userId || !tgInitData) {
+    showPopup("Open from Telegram");
     return;
   }
 
-  combo=(now-lastTapTime<650)?Math.min(combo+1,5):1;
-  lastTapTime=now;
+  if (energy <= 0) {
+    document.getElementById("status").innerText = "Energy empty. Wait for recharge ⚡";
+    return;
+  }
 
-  let gain=combo;
-  if(xp>=8000)gain+=1;
+  const now = Date.now();
 
-  coins+=gain; 
-  xp+=combo*2; 
-  taps++; 
-  energy-=xp>=4500&&taps%2===0?0:1;
+  combo = now - lastTapTime < 650 ? Math.min(combo + 1, 5) : 1;
+  lastTapTime = now;
+  lastLocalTapAt = now;
 
-  const comboText=document.getElementById("comboText");
-  comboText.innerText=combo>=4 ? "🔥 FIRE COMBO x"+combo : "Combo: x"+combo;
-  comboText.classList.toggle("fire",combo>=4);
+  const comboText = document.getElementById("comboText");
+  comboText.innerText = combo >= 4 ? "🔥 FIRE COMBO x" + combo : "Combo: x" + combo;
+  comboText.classList.toggle("fire", combo >= 4);
 
-  document.getElementById("status").innerText=statuses[Math.floor(Math.random()*statuses.length)];
-  createFloat(e,"+"+gain);
+  document.getElementById("status").innerText = statuses[Math.floor(Math.random() * statuses.length)];
+
+  createFloat(e, "+ tap");
   createCoinBurst(e);
   pulseMascot();
 
-  if(combo>=3)document.getElementById("gameCard").classList.add("flash");
-  setTimeout(()=>document.getElementById("gameCard").classList.remove("flash"),350);
+  if (combo >= 3) {
+    document.getElementById("gameCard").classList.add("flash");
+    setTimeout(() => document.getElementById("gameCard").classList.remove("flash"), 350);
+  }
 
-  if(taps%25===0)openBox();
-  if(taps>0 && taps%18===0)characterEvent();
-  if(navigator.vibrate)navigator.vibrate(22);
+  if (navigator.vibrate) navigator.vibrate(22);
 
   tapBuffer++;
-  save();
-  refresh();
+
+  if (tapBuffer >= 10) {
+    syncTapBuffer();
+  }
 }
 
-function pulseMascot(){
-  const m=document.getElementById("mascot");
+async function syncTapBuffer() {
+  if (syncInProgress || !userId || !tgInitData || tapBuffer <= 0) return;
+
+  syncInProgress = true;
+
+  const tapsToSend = Math.min(tapBuffer, 30);
+  tapBuffer -= tapsToSend;
+
+  try {
+    const r = await api("/tap-sync", {
+      method: "POST",
+      body: JSON.stringify({
+        initData: tgInitData,
+        taps: tapsToSend
+      })
+    });
+
+    if (r.success) {
+      coins = Number(r.points ?? coins);
+      xp = Number(r.xp ?? xp);
+      taps = Number(r.taps ?? taps);
+      energy = Number(r.energy ?? energy);
+      level = Number(r.level ?? calculateLevel(xp));
+
+      refresh();
+
+      if (r.gained && r.gained.points > 0) {
+        document.getElementById("status").innerText =
+          `Synced +${r.gained.points} points safely ✅`;
+      }
+    } else {
+      tapBuffer += tapsToSend;
+      showPopup(r.message || "Sync failed");
+    }
+  } catch (e) {
+    tapBuffer += tapsToSend;
+    showPopup("Sync issue");
+  }
+
+  syncInProgress = false;
+
+  if (tapBuffer > 0) {
+    setTimeout(syncTapBuffer, 250);
+  }
+}
+
+function pulseMascot() {
+  const m = document.getElementById("mascot");
   m.classList.remove("tap-pulse");
   void m.offsetWidth;
   m.classList.add("tap-pulse");
-  setTimeout(()=>m.classList.remove("tap-pulse"),230);
+  setTimeout(() => m.classList.remove("tap-pulse"), 230);
 }
 
-function createCoinBurst(e){
-  const card=document.getElementById("gameCard");
-  const rect=card.getBoundingClientRect();
-  const baseX=e.clientX?e.clientX-rect.left:rect.width/2;
-  const baseY=e.clientY?e.clientY-rect.top:160;
+function createCoinBurst(e) {
+  const card = document.getElementById("gameCard");
+  const rect = card.getBoundingClientRect();
+  const baseX = e.clientX ? e.clientX - rect.left : rect.width / 2;
+  const baseY = e.clientY ? e.clientY - rect.top : 160;
 
-  for(let i=0;i<6;i++){
-    const p=document.createElement("div");
-    p.className="coin-particle";
-    const angle=Math.random()*Math.PI*2;
-    const dist=35+Math.random()*38;
-    p.style.left=baseX+"px";
-    p.style.top=baseY+"px";
-    p.style.setProperty("--dx",Math.cos(angle)*dist+"px");
-    p.style.setProperty("--dy",Math.sin(angle)*dist-45+"px");
+  for (let i = 0; i < 6; i++) {
+    const p = document.createElement("div");
+    p.className = "coin-particle";
+
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 35 + Math.random() * 38;
+
+    p.style.left = baseX + "px";
+    p.style.top = baseY + "px";
+    p.style.setProperty("--dx", Math.cos(angle) * dist + "px");
+    p.style.setProperty("--dy", Math.sin(angle) * dist - 45 + "px");
+
     card.appendChild(p);
-    setTimeout(()=>p.remove(),720);
+    setTimeout(() => p.remove(), 720);
   }
 }
 
-function characterEvent(){
-  const available=characters.filter(c=>xp>=c.minXp);
-  if(!available.length)return;
-  const c=available[Math.floor(Math.random()*available.length)];
+function createFloat(e, text) {
+  const card = document.getElementById("gameCard");
+  const f = document.createElement("div");
+  f.className = "float";
+  f.innerText = text;
 
-  if(c.coins)coins=Math.max(0,coins+c.coins);
-  if(c.xp)xp+=c.xp;
-  if(c.energy)energy=Math.max(0,Math.min(100,energy+c.energy));
-  if(c.comboReset){combo=1;document.getElementById("comboText").innerText="Combo: x1";document.getElementById("comboText").classList.remove("fire")}
-  if(c.slow)slowModeUntil=Date.now()+5000;
+  const rect = card.getBoundingClientRect();
+  const x = e.clientX ? e.clientX - rect.left : rect.width / 2;
+  const y = e.clientY ? e.clientY - rect.top : 160;
 
-  modal(c.icon,c.name,c.text,c.effect,c.img);
+  f.style.left = x + "px";
+  f.style.top = y + "px";
 
-  if(c.type==="bad")document.getElementById("gameCard").classList.add("shake");
-  setTimeout(()=>document.getElementById("gameCard").classList.remove("shake"),300);
-  save();
-  refresh();
+  card.appendChild(f);
+  setTimeout(() => f.remove(), 800);
 }
 
-function openBox(){
-  let r=Math.random(),b;
-  if(xp>=1800)r-=0.05;
-  if(xp>=3000)r-=0.08;
-  if(r<0.55)b=boxes[0]; else if(r<0.80)b=boxes[1]; else if(r<0.94)b=boxes[2]; else if(r<0.985)b=boxes[3]; else b=boxes[4];
+function renderGang() {
+  const gangGrid = document.getElementById("gangGrid");
+  const skinsGrid = document.getElementById("skinsGrid");
 
-  coins+=b.coins; xp+=b.xp;
+  if (!gangGrid || !skinsGrid) return;
 
-  if(b.rare){
-    const gc=document.getElementById("gameCard");
-    gc.classList.add("rare-flash");
-    setTimeout(()=>gc.classList.remove("rare-flash"),500);
-  }
+  gangGrid.innerHTML = gang.map(c => {
+    const open = xp >= c.unlock;
 
-  modal(b.icon,b.name,b.coins?`You found +${b.coins} points and +${b.xp} XP`:"You got rugged. Nothing 😂",b.coins?"+ Reward claimed":"No reward",null);
-  save();refresh();
-}
-
-function manualBox(){
-  if(coins<250){showPopup("Need 250 points");return}
-  coins-=250;openBox();
-}
-
-function modal(icon,title,text,effect="",img=null){
-  const image=document.getElementById("eventImage");
-  const modalIcon=document.getElementById("modalIcon");
-
-  if(img){
-    image.src=img;
-    image.style.display="block";
-    modalIcon.style.display="none";
-  }else{
-    image.style.display="none";
-    modalIcon.style.display="block";
-    modalIcon.innerText=icon;
-  }
-
-  document.getElementById("modalTitle").innerText=title;
-  document.getElementById("modalText").innerText=text;
-  document.getElementById("eventEffect").innerText=effect||"";
-  document.getElementById("modalOverlay").style.display="flex";
-}
-
-function closeModal(){document.getElementById("modalOverlay").style.display="none"}
-
-function createFloat(e,text){
-  const card=document.getElementById("gameCard");
-  const f=document.createElement("div");
-  f.className="float";f.innerText=text;
-  const rect=card.getBoundingClientRect();
-  const x=e.clientX?e.clientX-rect.left:rect.width/2;
-  const y=e.clientY?e.clientY-rect.top:160;
-  f.style.left=x+"px";f.style.top=y+"px";
-  card.appendChild(f);setTimeout(()=>f.remove(),800);
-}
-
-async function dailyReward(){
-  try{
-    const r=await api("/daily-reward",{method:"POST",body:JSON.stringify({initData:tgInitData})});
-    if(!r.success){showPopup(r.message||"Already claimed");return}
-    if(r.player||r.user)applyPlayer(r.player||r.user);
-    modal("🎁","Daily Reward","+ "+r.reward+" Delay Points","+ Daily reward",null);
-    refresh();loadLeaderboard();
-  }catch(e){showPopup("Daily failed")}
-}
-
-async function claimTapTask(){
-  if(tapBuffer>0)await syncTapBuffer();
-  try{
-    const r=await api("/claim-tap-task",{method:"POST",body:JSON.stringify({initData:tgInitData})});
-    if(!r.success){showPopup(r.message||"Mission not ready");return}
-    if(r.player||r.user)applyPlayer(r.player||r.user);
-    modal("✅","Mission Complete","+ Mission reward","+"+r.reward+" Points +100 XP",null);
-    refresh();loadLeaderboard();
-  }catch(e){showPopup("Mission failed")}
-}
-
-function getInviteLink(){return"https://t.me/DelayDogeGameBot?start="+encodeURIComponent(userId)}
-
-async function copyInvite(){
-  try{await navigator.clipboard.writeText(getInviteLink());showPopup("Invite copied 🔗")}catch(e){showPopup("Copy failed")}
-}
-
-function shareTelegram(){
-  const link=getInviteLink();
-  const msg=`I’m playing DelayDoge 🐶📦\nTap DelayDoge. Earn the meme.\n\n${link}`;
-  window.open("https://t.me/share/url?url="+encodeURIComponent(link)+"&text="+encodeURIComponent(msg),"_blank");
-}
-
-function showPage(p){
-  ["home","tasks","invite","gang"].forEach(x=>{
-    document.getElementById(x+"Page").classList.add("hidden");
-    document.getElementById("nav"+cap(x)).classList.remove("active");
-  });
-  document.getElementById(p+"Page").classList.remove("hidden");
-  document.getElementById("nav"+cap(p)).classList.add("active");
-  if(p==="home")loadLeaderboard();
-  if(p==="gang")renderGang();
-}
-
-function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
-
-function renderGang(){
-  const gangGrid=document.getElementById("gangGrid");
-  const skinsGrid=document.getElementById("skinsGrid");
-  if(!gangGrid||!skinsGrid)return;
-
-  gangGrid.innerHTML=gang.map(c=>{
-    const open=xp>=c.unlock;
-    return `<div class="gang-card ${open?"":"locked"}">
-      <div class="badge ${open?"unlocked":""}">${open?"OPEN":c.unlock+" XP"}</div>
-      ${open && c.img ? `<img class="gang-img" src="${c.img}" alt="${c.name}">` : `<div class="gang-icon">${open?c.icon:"🔒"}</div>`}
+    return `<div class="gang-card ${open ? "" : "locked"}">
+      <div class="badge ${open ? "unlocked" : ""}">${open ? "OPEN" : c.unlock + " XP"}</div>
+      ${open && c.img ? `<img class="gang-img" src="${c.img}" alt="${c.name}">` : `<div class="gang-icon">${open ? c.icon : "🔒"}</div>`}
       <div class="gang-name">${c.name}</div>
       <div class="gang-role">${c.role}</div>
       <div class="gang-desc">${c.desc}</div>
     </div>`;
   }).join("");
 
-  skinsGrid.innerHTML=skins.map(s=>{
-    const open=xp>=s.unlock;
-    return `<div class="gang-card ${open?"":"locked"}">
-      <div class="badge ${open?"unlocked":""}">${open?"OPEN":s.unlock+" XP"}</div>
-      <div class="gang-icon">${open?s.icon:"🔒"}</div>
+  skinsGrid.innerHTML = skins.map(s => {
+    const open = xp >= s.unlock;
+
+    return `<div class="gang-card ${open ? "" : "locked"}">
+      <div class="badge ${open ? "unlocked" : ""}">${open ? "OPEN" : s.unlock + " XP"}</div>
+      <div class="gang-icon">${open ? s.icon : "🔒"}</div>
       <div class="gang-name">${s.name}</div>
       <div class="gang-role">${s.role}</div>
       <div class="gang-desc">${s.desc}</div>
@@ -591,54 +551,104 @@ function renderGang(){
   }).join("");
 }
 
-async function loadLeaderboard(){
-  try{
-    const r=await api("/leaderboard");
-    if(!r.success)return;
-    const rows=r.leaderboard.slice(0,10).map((p,i)=>{
-      const name=p.telegram?.username?"@"+p.telegram.username:(p.telegram?.first_name||p.firstName||"Player");
-      const score=Number(p.points??p.coins)||0;
-      return `${i+1}. ${name} — ${score} pts`;
-    });
-    document.getElementById("feed").innerHTML=rows.join("<br>")||"No players yet";
-  }catch(e){
-    document.getElementById("feed").innerHTML="Customs Boss delayed the leaderboard 🛃";
+function modal(icon, title, text, effect = "", img = null) {
+  const image = document.getElementById("eventImage");
+  const modalIcon = document.getElementById("modalIcon");
+
+  if (img) {
+    image.src = img;
+    image.style.display = "block";
+    modalIcon.style.display = "none";
+  } else {
+    image.style.display = "none";
+    modalIcon.style.display = "block";
+    modalIcon.innerText = icon;
+  }
+
+  document.getElementById("modalTitle").innerText = title;
+  document.getElementById("modalText").innerText = text;
+  document.getElementById("eventEffect").innerText = effect || "";
+  document.getElementById("modalOverlay").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("modalOverlay").style.display = "none";
+}
+
+function comingSoon() {
+  showPopup("Coming soon 🚧");
+}
+
+function getInviteLink() {
+  return "https://t.me/DelayDogeGameBot?start=" + encodeURIComponent(userId || "delaydoge");
+}
+
+async function copyInvite() {
+  try {
+    await navigator.clipboard.writeText(getInviteLink());
+    showPopup("Invite copied 🔗");
+  } catch (e) {
+    showPopup("Copy failed");
   }
 }
 
-function showPopup(t){
-  const p=document.getElementById("popup");
-  p.innerText=t;p.classList.add("show");
-  setTimeout(()=>p.classList.remove("show"),1100);
+function shareTelegram() {
+  const link = getInviteLink();
+  const msg = `I’m playing DelayDoge 🐶📦\nTap DelayDoge. Earn the meme.\n\n${link}`;
+
+  window.open(
+    "https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(msg),
+    "_blank"
+  );
 }
 
-setInterval(()=>{
-  if(energy<100&&userId){
-    energy++;
-    syncPending=true;
-    refresh();
-  }
-},5000);
+function showPage(p) {
+  ["home", "tasks", "invite", "gang"].forEach(x => {
+    document.getElementById(x + "Page").classList.add("hidden");
+    document.getElementById("nav" + cap(x)).classList.remove("active");
+  });
 
-setInterval(()=>{
-  if(userId){
-    if(tapBuffer>0){syncTapBuffer();return;}
-    if(syncPending){syncPending=false;syncSaveNow();}
-  }
-},5000);
+  document.getElementById(p + "Page").classList.remove("hidden");
+  document.getElementById("nav" + cap(p)).classList.add("active");
 
-window.addEventListener("beforeunload",()=>{
-  if(userId&&tgInitData&&tapBuffer>0){
+  if (p === "gang") renderGang();
+}
+
+function cap(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function setFeed(html) {
+  document.getElementById("feed").innerHTML = html;
+}
+
+function showPopup(t) {
+  const p = document.getElementById("popup");
+  p.innerText = t;
+  p.classList.add("show");
+  setTimeout(() => p.classList.remove("show"), 1200);
+}
+
+setInterval(() => {
+  if (tapBuffer > 0) {
+    syncTapBuffer();
+  }
+}, 2000);
+
+window.addEventListener("beforeunload", () => {
+  if (userId && tgInitData && tapBuffer > 0) {
     navigator.sendBeacon(
-      API_BASE+"/tap-sync",
-      new Blob([JSON.stringify({initData:tgInitData,taps:tapBuffer})],{type:"application/json"})
+      API_BASE + "/tap-sync",
+      new Blob(
+        [JSON.stringify({ initData: tgInitData, taps: Math.min(tapBuffer, 30) })],
+        { type: "application/json" }
+      )
     );
   }
 });
 
-setInterval(()=>{if(userId)loadLeaderboard()},10000);
-
 bootTelegram();
 </script>
+
 </body>
 </html>
