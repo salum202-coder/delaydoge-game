@@ -5,29 +5,22 @@ const { MongoClient } = require("mongodb");
 const app = express();
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
-app.use(express.json());
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type");
-
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
+  if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
 
 app.use(express.static(path.join(__dirname)));
+
 const PORT = process.env.PORT || 10000;
 const MONGO_URI = process.env.MONGO_URI;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
 let db;
-
-// ================= HELPERS =================
 
 function safeNumber(value, fallback = 0) {
   const n = Number(value);
@@ -47,15 +40,9 @@ function getUnlockedCharacters(level) {
   return characters;
 }
 
-// ================= DEBUG VERIFY (مؤقت) =================
+function getTelegramUserFromInitData(initData) {
+  if (!initData) return null;
 
-function verifyTelegram(initData) {
-  return true; // 🔥 مؤقت عشان نختبر
-}
-
-// ================= TELEGRAM USER =================
-
-function getTelegramUser(initData) {
   const params = new URLSearchParams(initData);
   const rawUser = params.get("user");
 
@@ -64,27 +51,32 @@ function getTelegramUser(initData) {
   try {
     const user = JSON.parse(rawUser);
     if (!user || !user.id) return null;
-
-    return {
-      id: user.id,
-      username: user.username || "",
-      firstName: user.first_name || "",
-      lastName: user.last_name || "",
-      photoUrl: user.photo_url || ""
-    };
+    return user;
   } catch {
     return null;
   }
 }
 
-// ================= PLAYER =================
+function normalizeTelegramUser(user) {
+  if (!user || !user.id) return null;
 
-async function findOrCreatePlayer(initData) {
-  if (!verifyTelegram(initData)) {
-    return { error: "Invalid Telegram data" };
+  return {
+    id: user.id,
+    username: user.username || "",
+    firstName: user.first_name || user.firstName || "",
+    lastName: user.last_name || user.lastName || "",
+    photoUrl: user.photo_url || user.photoUrl || ""
+  };
+}
+
+async function findOrCreatePlayer({ initData, telegramUser }) {
+  let rawUser = getTelegramUserFromInitData(initData);
+
+  if (!rawUser && telegramUser) {
+    rawUser = telegramUser;
   }
 
-  const tgUser = getTelegramUser(initData);
+  const tgUser = normalizeTelegramUser(rawUser);
 
   if (!tgUser) {
     return { error: "Invalid Telegram user" };
@@ -123,8 +115,6 @@ async function findOrCreatePlayer(initData) {
   return { player };
 }
 
-// ================= ROUTES =================
-
 app.get("/health", (req, res) => {
   res.json({
     success: true,
@@ -134,13 +124,11 @@ app.get("/health", (req, res) => {
   });
 });
 
-// ---------- AUTH ----------
-
 app.post("/auth/telegram", async (req, res) => {
   try {
-    const { initData } = req.body;
+    const { initData, telegramUser } = req.body;
 
-    const result = await findOrCreatePlayer(initData);
+    const result = await findOrCreatePlayer({ initData, telegramUser });
 
     if (result.error) {
       return res.status(403).json({
@@ -169,13 +157,11 @@ app.post("/auth/telegram", async (req, res) => {
   }
 });
 
-// ---------- TAP SYNC ----------
-
 app.post("/tap-sync", async (req, res) => {
   try {
-    const { initData, taps } = req.body;
+    const { initData, telegramUser, taps } = req.body;
 
-    const result = await findOrCreatePlayer(initData);
+    const result = await findOrCreatePlayer({ initData, telegramUser });
 
     if (result.error) {
       return res.status(403).json({
@@ -214,7 +200,6 @@ app.post("/tap-sync", async (req, res) => {
 
       pointsGain += combo;
       xpGain += combo * 2;
-
       lastTapAt = virtualTapTime;
     }
 
@@ -269,8 +254,6 @@ app.post("/tap-sync", async (req, res) => {
   }
 });
 
-// ================= START =================
-
 async function start() {
   if (!MONGO_URI) throw new Error("Missing MONGO_URI");
   if (!BOT_TOKEN) throw new Error("Missing BOT_TOKEN");
@@ -279,7 +262,6 @@ async function start() {
   await client.connect();
 
   db = client.db("delaydoge");
-
   await db.collection("users").createIndex({ userId: 1 }, { unique: true });
 
   console.log("✅ MongoDB Connected");
