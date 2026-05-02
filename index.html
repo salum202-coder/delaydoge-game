@@ -406,13 +406,23 @@ function tapDeliver(e) {
   combo = now - lastTapTime < 650 ? Math.min(combo + 1, 5) : 1;
   lastTapTime = now;
 
+  /* ======== OPTIMISTIC UI UPDATE (الحل السحري لسرعة الاستجابة) ======== */
+  coins += combo;
+  xp += (combo * 2);
+  energy = Math.max(0, energy - 1);
+  taps += 1;
+  level = calculateLevel(xp);
+  
+  refresh(); 
+  /* ==================================================================== */
+
   const comboText = document.getElementById("comboText");
   comboText.innerText = combo >= 4 ? "🔥 FIRE COMBO x" + combo : "Combo: x" + combo;
   comboText.classList.toggle("fire", combo >= 4);
 
   document.getElementById("status").innerText = statuses[Math.floor(Math.random() * statuses.length)];
 
-  createFloat(e, "+ tap");
+  createFloat(e, "+" + combo);
   createCoinBurst(e);
   pulseMascot();
 
@@ -425,6 +435,7 @@ function tapDeliver(e) {
 
   tapBuffer++;
 
+  // يستمر في تجميع الضغطات وإرسالها للسيرفر للحماية من الحظر
   if (tapBuffer >= 10) {
     syncTapBuffer();
   }
@@ -448,20 +459,22 @@ async function syncTapBuffer() {
     });
 
     if (!r.error) {
-      coins = Number(r.points ?? coins);
-      xp = Number(r.xp ?? xp);
-      taps = Number(r.taps ?? taps);
-      energy = Number(r.energy ?? energy);
-      level = Number(r.level ?? calculateLevel(xp));
-      combo = Number(r.combo ?? combo);
+      if (tapBuffer === 0) {
+          coins = Number(r.points ?? coins);
+          xp = Number(r.xp ?? xp);
+          taps = Number(r.taps ?? taps);
+          energy = Number(r.energy ?? energy);
+          level = Number(r.level ?? calculateLevel(xp));
+          combo = Number(r.combo ?? combo);
+          
+          const comboText = document.getElementById("comboText");
+          comboText.innerText = combo >= 4
+            ? "🔥 FIRE COMBO x" + combo
+            : "Combo: x" + combo;
 
-      const comboText = document.getElementById("comboText");
-      comboText.innerText = combo >= 4
-        ? "🔥 FIRE COMBO x" + combo
-        : "Combo: x" + combo;
-
-      comboText.classList.toggle("fire", combo >= 4);
-      refresh();
+          comboText.classList.toggle("fire", combo >= 4);
+          refresh();
+      }
 
       document.getElementById("status").innerText = "Synced safely ✅";
     } else {
