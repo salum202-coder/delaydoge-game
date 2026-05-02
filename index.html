@@ -1,10 +1,11 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V14 Fast</title>
-<script src="[https://telegram.org/js/telegram-web-app.js](https://telegram.org/js/telegram-web-app.js)"></script>
+<title>DelayDoge V15</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
@@ -105,8 +106,9 @@ box-shadow:0 0 55px rgba(247,200,67,.38);animation:eventPop .22s ease-out;
 
 <div class="telegram-only" id="telegramOnly">
   <div class="telegram-only-card">
-    <h2>🐶 Open from Telegram</h2>
-    <p>افتح اللعبة من زر تيليجرام الرسمي داخل البوت عشان تنحفظ نقاطك بنفس الحساب.</p>
+    <h2>🐶 Play inside Telegram</h2>
+    <p>Please open the game using the official Play button inside our Telegram bot to save your progress.</p>
+    <p style="font-size: 11px; margin-top: 10px; color: #ff6b6b;">(Ensure the Bot button is configured as a Web App, not a regular URL)</p>
   </div>
 </div>
 
@@ -201,7 +203,7 @@ box-shadow:0 0 55px rgba(247,200,67,.38);animation:eventPop .22s ease-out;
 </div>
 
 <script>
-const API_BASE = "[https://delaydoge-api.onrender.com](https://delaydoge-api.onrender.com)";
+const API_BASE = "https://delaydoge-api.onrender.com";
 
 let tg = null;
 let tgUser = null;
@@ -296,7 +298,6 @@ async function loginUser() {
       return;
     }
 
-    // هنا فقط نقوم بجلب البيانات لأول مرة من السيرفر
     applyPlayer(result.player);
     setFeed("Player loaded safely ✅");
   } catch (e) {
@@ -323,9 +324,7 @@ function refresh() {
   document.getElementById("energyFill").style.width = Math.max(0, Math.min(100, energy)) + "%";
 }
 
-// ==========================================
-// التحديث الفوري المباشر - (السبب في زيادة الرقم فوراً)
-// ==========================================
+// Immediate updates for extreme fast response
 function tapDeliver(e) {
   if (!userId || !tgUser) return;
   if (energy <= 0) return;
@@ -334,14 +333,13 @@ function tapDeliver(e) {
   combo = now - lastTapTime < 650 ? Math.min(combo + 1, 5) : 1;
   lastTapTime = now;
 
-  // تحديث الأرقام داخلياً فوراً وبدون انتظار
+  // Optimistic UI updates
   coins += combo;
   xp += (combo * 2);
   energy -= 1;
   taps += 1;
   level = Math.floor(Math.sqrt(xp / 100)) + 1;
 
-  // إجبار واجهة المستخدم على التغيير في نفس اللحظة
   document.getElementById("coins").innerText = coins;
   document.getElementById("xp").innerText = xp;
   document.getElementById("taps").innerText = taps;
@@ -349,7 +347,6 @@ function tapDeliver(e) {
   document.getElementById("energyText").innerText = energy + "/100";
   document.getElementById("energyFill").style.width = Math.max(0, Math.min(100, energy)) + "%";
 
-  // مؤثرات بصرية
   const comboText = document.getElementById("comboText");
   comboText.innerText = combo >= 4 ? "🔥 FIRE COMBO x" + combo : "Combo: x" + combo;
   comboText.classList.toggle("fire", combo >= 4);
@@ -360,16 +357,12 @@ function tapDeliver(e) {
 
   if (navigator.vibrate) navigator.vibrate(22);
 
-  // تسجيل الضغطة لإرسالها في الخلفية
   tapBuffer++;
   if (tapBuffer >= 10) {
     syncTapBuffer();
   }
 }
 
-// ==========================================
-// إرسال البيانات للسيرفر بصمت تام
-// ==========================================
 async function syncTapBuffer() {
   if (syncInProgress || tapBuffer <= 0) return;
 
@@ -384,11 +377,9 @@ async function syncTapBuffer() {
     });
 
     if (!r.error) {
-      // لا نقم بتعديل النقاط هنا أبداً! المتصفح هو من يحسب النقاط أثناء اللعب
-      // هذا يمنع أي تعليق أو تراجع في الأرقام
       document.getElementById("status").innerText = "Synced safely ✅";
     } else {
-      tapBuffer += tapsToSend; // إعادة المحاولة إذا فشل
+      tapBuffer += tapsToSend;
     }
   } catch (e) {
     tapBuffer += tapsToSend;
@@ -398,7 +389,6 @@ async function syncTapBuffer() {
   if (tapBuffer > 0) setTimeout(syncTapBuffer, 250);
 }
 
-// المؤثرات البصرية
 function pulseMascot() {
   const m = document.getElementById("mascot");
   m.classList.remove("tap-pulse");
@@ -452,7 +442,32 @@ function showPage(p) {
 
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 function setFeed(html) { document.getElementById("feed").innerHTML = html; }
-function comingSoon() { alert("Coming soon"); }
+function comingSoon() { 
+  const p = document.getElementById("popup");
+  p.innerText = "Coming soon 🚧";
+  p.classList.add("show");
+  setTimeout(() => p.classList.remove("show"), 1200);
+}
+
+function shareTelegram() {
+  const link = "https://t.me/DelayDogeGameBot?start=" + (userId || "delaydoge");
+  const msg = `I’m playing DelayDoge 🐶📦\nTap fast. Earn the meme.\n\n${link}`;
+  window.open("https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(msg), "_blank");
+}
+
+function copyInvite() {
+  const link = "https://t.me/DelayDogeGameBot?start=" + (userId || "delaydoge");
+  navigator.clipboard.writeText(link).then(() => {
+    const p = document.getElementById("popup");
+    p.innerText = "Copied! 🔗";
+    p.classList.add("show");
+    setTimeout(() => p.classList.remove("show"), 1200);
+  });
+}
+
+function closeModal() {
+  document.getElementById("modalOverlay").style.display = "none";
+}
 
 setInterval(() => {
   if (tapBuffer > 0) syncTapBuffer();
@@ -462,3 +477,6 @@ bootTelegram();
 </script>
 </body>
 </html>
+
+
+```
