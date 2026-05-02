@@ -1,6 +1,5 @@
 const express = require("express");
 const path = require("path");
-const crypto = require("crypto");
 const { MongoClient } = require("mongodb");
 
 const app = express();
@@ -13,6 +12,8 @@ const MONGO_URI = process.env.MONGO_URI;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
 let db;
+
+// ================= HELPERS =================
 
 function safeNumber(value, fallback = 0) {
   const n = Number(value);
@@ -32,42 +33,13 @@ function getUnlockedCharacters(level) {
   return characters;
 }
 
+// ================= DEBUG VERIFY (مؤقت) =================
+
 function verifyTelegram(initData) {
-  return true; // مؤقت للتجربة
+  return true; // 🔥 مؤقت عشان نختبر
 }
-  if (!initData || !BOT_TOKEN) return false;
 
-  const params = new URLSearchParams(initData);
-  const hash = params.get("hash");
-
-  if (!hash) return false;
-
-  params.delete("hash");
-
-  const dataCheckString = [...params.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${v}`)
-    .join("\n");
-
-  const secretKey = crypto
-    .createHmac("sha256", "WebAppData")
-    .update(BOT_TOKEN)
-    .digest();
-
-  const calculatedHash = crypto
-    .createHmac("sha256", secretKey)
-    .update(dataCheckString)
-    .digest("hex");
-
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(calculatedHash, "hex"),
-      Buffer.from(hash, "hex")
-    );
-  } catch {
-    return false;
-  }
-}
+// ================= TELEGRAM USER =================
 
 function getTelegramUser(initData) {
   const params = new URLSearchParams(initData);
@@ -90,6 +62,8 @@ function getTelegramUser(initData) {
     return null;
   }
 }
+
+// ================= PLAYER =================
 
 async function findOrCreatePlayer(initData) {
   if (!verifyTelegram(initData)) {
@@ -135,6 +109,8 @@ async function findOrCreatePlayer(initData) {
   return { player };
 }
 
+// ================= ROUTES =================
+
 app.get("/health", (req, res) => {
   res.json({
     success: true,
@@ -143,6 +119,8 @@ app.get("/health", (req, res) => {
     time: new Date()
   });
 });
+
+// ---------- AUTH ----------
 
 app.post("/auth/telegram", async (req, res) => {
   try {
@@ -176,6 +154,8 @@ app.post("/auth/telegram", async (req, res) => {
     });
   }
 });
+
+// ---------- TAP SYNC ----------
 
 app.post("/tap-sync", async (req, res) => {
   try {
@@ -274,6 +254,8 @@ app.post("/tap-sync", async (req, res) => {
     });
   }
 });
+
+// ================= START =================
 
 async function start() {
   if (!MONGO_URI) throw new Error("Missing MONGO_URI");
