@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V13 Stable Sync</title>
+<title>DelayDoge V13 Stable</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -219,7 +219,6 @@ let lastTapTime = 0;
 
 let tapBuffer = 0;
 let syncInProgress = false;
-let lastLocalTapAt = 0;
 
 const statuses = [
   "DelayDoge moved the package 2 meters. Bullish 📦",
@@ -287,12 +286,8 @@ function continueBoot() {
     referralCode = tg?.initDataUnsafe?.start_param || null;
 
     if (!tgUser || !tgUser.id) {
-  return showTelegramOnly();
-}
-
-if (!tgInitData) {
-  console.warn("Telegram initData is empty");
-}
+      return showTelegramOnly();
+    }
 
     userId = "tg_" + tgUser.id;
 
@@ -311,22 +306,27 @@ async function api(path, options = {}) {
     ...options
   });
 
-  return res.json();
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok && !data.error && !data.message) {
+    data.error = "Request failed";
+  }
+
+  return data;
 }
 
 async function loginUser() {
   try {
-    const result = await api("/auth/telegram", {
+    const result = await api("/auth", {
       method: "POST",
       body: JSON.stringify({
-        initData: tgInitData,
-        telegramUser: tgUser,
-        referralCode
+        initData: tgInitData
       })
     });
 
-    if (!result.success) {
-      showPopup("Login failed ⚠️");
+    if (result.error || !result.player) {
+      showPopup(result.error || "Login failed ⚠️");
+      setFeed("Login failed. Open from Telegram button.");
       return;
     }
 
@@ -405,7 +405,6 @@ function tapDeliver(e) {
 
   combo = now - lastTapTime < 650 ? Math.min(combo + 1, 5) : 1;
   lastTapTime = now;
-  lastLocalTapAt = now;
 
   const comboText = document.getElementById("comboText");
   comboText.innerText = combo >= 4 ? "🔥 FIRE COMBO x" + combo : "Combo: x" + combo;
@@ -440,16 +439,15 @@ async function syncTapBuffer() {
   tapBuffer -= tapsToSend;
 
   try {
-    const r = await api("/tap-sync", {
+    const r = await api("/tap", {
       method: "POST",
       body: JSON.stringify({
         initData: tgInitData,
-        telegramUser: tgUser,
         taps: tapsToSend
       })
     });
 
-    if (r.success) {
+    if (!r.error) {
       coins = Number(r.points ?? coins);
       xp = Number(r.xp ?? xp);
       taps = Number(r.taps ?? taps);
@@ -457,21 +455,18 @@ async function syncTapBuffer() {
       level = Number(r.level ?? calculateLevel(xp));
       combo = Number(r.combo ?? combo);
 
-const comboText = document.getElementById("comboText");
-comboText.innerText = combo >= 4 
-  ? "🔥 FIRE COMBO x" + combo 
-  : "Combo: x" + combo;
+      const comboText = document.getElementById("comboText");
+      comboText.innerText = combo >= 4
+        ? "🔥 FIRE COMBO x" + combo
+        : "Combo: x" + combo;
 
-comboText.classList.toggle("fire", combo >= 4);
+      comboText.classList.toggle("fire", combo >= 4);
       refresh();
 
-      if (r.gained && r.gained.points > 0) {
-        document.getElementById("status").innerText =
-          `Synced +${r.gained.points} points safely ✅`;
-      }
+      document.getElementById("status").innerText = "Synced safely ✅";
     } else {
       tapBuffer += tapsToSend;
-      showPopup(r.message || "Sync failed");
+      showPopup(r.error || r.message || "Sync failed");
     }
   } catch (e) {
     tapBuffer += tapsToSend;
@@ -651,9 +646,9 @@ setInterval(() => {
 window.addEventListener("beforeunload", () => {
   if (userId && tgUser && tapBuffer > 0) {
     navigator.sendBeacon(
-      API_BASE + "/tap-sync",
+      API_BASE + "/tap",
       new Blob(
-        [JSON.stringify({ initData: tgInitData, telegramUser: tgUser, taps: Math.min(tapBuffer, 30) })],
+        [JSON.stringify({ initData: tgInitData, taps: Math.min(tapBuffer, 30) })],
         { type: "application/json" }
       )
     );
