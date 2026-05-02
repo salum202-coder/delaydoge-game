@@ -14,26 +14,22 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 
 let db;
 
-async function start() {
-  if (!MONGO_URI) throw new Error("Missing MONGO_URI");
-
-  const client = new MongoClient(MONGO_URI);
-  await client.connect();
-
-  db = client.db("delaydoge");
-
-  await db.collection("users").createIndex({ userId: 1 }, { unique: true });
-
-  console.log("✅ MongoDB Connected");
-
-  app.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
-  });
-}
-
 function safeNumber(value, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
+}
+
+function calculateLevel(xp) {
+  return Math.floor(Math.sqrt(safeNumber(xp, 0) / 100)) + 1;
+}
+
+function getUnlockedCharacters(level) {
+  const characters = ["DelayDoge"];
+  if (level >= 2) characters.push("Express Cat");
+  if (level >= 4) characters.push("Traffic Raccoon");
+  if (level >= 6) characters.push("Angry Karen");
+  if (level >= 8) characters.push("Customs Boss");
+  return characters;
 }
 
 function verifyTelegram(initData) {
@@ -41,14 +37,7 @@ function verifyTelegram(initData) {
 
   const params = new URLSearchParams(initData);
   const hash = params.get("hash");
-console.log("INIT DATA CHECK:", {
-  hasInitData: !!initData,
-  initLength: initData ? initData.length : 0,
-  hasBotToken: !!BOT_TOKEN,
-  botTokenStart: BOT_TOKEN ? BOT_TOKEN.slice(0, 8) : null,
-  hasHash: !!hash,
-  hasUser: !!params.get("user")
-});
+
   if (!hash) return false;
 
   params.delete("hash");
@@ -100,21 +89,6 @@ function getTelegramUser(initData) {
   }
 }
 
-function calculateLevel(xp) {
-  return Math.floor(Math.sqrt(xp / 100)) + 1;
-}
-
-function getUnlockedCharacters(level) {
-  const characters = ["DelayDoge"];
-
-  if (level >= 2) characters.push("Express Cat");
-  if (level >= 4) characters.push("Traffic Raccoon");
-  if (level >= 6) characters.push("Angry Karen");
-  if (level >= 8) characters.push("Customs Boss");
-
-  return characters;
-}
-
 async function findOrCreatePlayer(initData) {
   if (!verifyTelegram(initData)) {
     return { error: "Invalid Telegram data" };
@@ -140,6 +114,8 @@ async function findOrCreatePlayer(initData) {
         taps: 0,
         energy: 100,
         maxEnergy: 100,
+        combo: 1,
+        lastTapAt: 0,
         createdAt: now
       },
       $set: {
@@ -154,7 +130,6 @@ async function findOrCreatePlayer(initData) {
   );
 
   const player = await db.collection("users").findOne({ userId });
-
   return { player };
 }
 
@@ -162,7 +137,7 @@ app.get("/health", (req, res) => {
   res.json({
     success: true,
     status: "online",
-    app: "DelayDoge",
+    app: "DelayDoge API",
     time: new Date()
   });
 });
@@ -241,11 +216,8 @@ app.post("/tap-sync", async (req, res) => {
         combo = 1;
       }
 
-      const tapPoints = combo;
-      const tapXp = combo * 2;
-
-      pointsGain += tapPoints;
-      xpGain += tapXp;
+      pointsGain += combo;
+      xpGain += combo * 2;
 
       lastTapAt = virtualTapTime;
     }
@@ -292,7 +264,6 @@ app.post("/tap-sync", async (req, res) => {
         taps: allowedTaps
       }
     });
-
   } catch (e) {
     console.error("TAP SYNC ERROR:", e);
     res.status(500).json({
@@ -301,68 +272,24 @@ app.post("/tap-sync", async (req, res) => {
     });
   }
 });
-    }
 
-    const player = result.player;
+async function start() {
+  if (!MONGO_URI) throw new Error("Missing MONGO_URI");
+  if (!BOT_TOKEN) throw new Error("Missing BOT_TOKEN");
 
-    const currentEnergy = safeNumber(player.energy, 100);
-    const currentPoints = safeNumber(player.points, 0);
-    const currentXp = safeNumber(player.xp, 0);
-    const currentTaps = safeNumber(player.taps, 0);
+  const client = new MongoClient(MONGO_URI);
+  await client.connect();
 
-    const requestedTaps = Math.floor(safeNumber(taps, 0));
+  db = client.db("delaydoge");
 
-    const safeTaps = Math.max(0, Math.min(requestedTaps, 30));
-    const allowedTaps = Math.min(safeTaps, currentEnergy);
+  await db.collection("users").createIndex({ userId: 1 }, { unique: true });
 
-    const pointGain = allowedTaps;
-    const xpGain = allowedTaps * 2;
+  console.log("✅ MongoDB Connected");
 
-    const newPoints = currentPoints + pointGain;
-    const newXp = currentXp + xpGain;
-    const newEnergy = Math.max(0, currentEnergy - allowedTaps);
-    const newTaps = currentTaps + allowedTaps;
-    const level = calculateLevel(newXp);
-
-    await db.collection("users").updateOne(
-      { userId: player.userId },
-      {
-        $set: {
-          points: newPoints,
-          xp: newXp,
-          energy: newEnergy,
-          level,
-          unlockedCharacters: getUnlockedCharacters(level),
-          updatedAt: new Date()
-        },
-        $inc: {
-          taps: allowedTaps
-        }
-      }
-    );
-
-    res.json({
-      success: true,
-      points: newPoints,
-      xp: newXp,
-      taps: newTaps,
-      energy: newEnergy,
-      level,
-      unlockedCharacters: getUnlockedCharacters(level),
-      gained: {
-        points: pointGain,
-        xp: xpGain,
-        taps: allowedTaps
-      }
-    });
-  } catch (e) {
-    console.error("TAP SYNC ERROR:", e);
-    res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
-  }
-});
+  app.listen(PORT, () => {
+    console.log(`✅ Server running on port ${PORT}`);
+  });
+}
 
 start().catch((err) => {
   console.error("❌ Server failed to start:", err);
