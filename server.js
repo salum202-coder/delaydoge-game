@@ -3,275 +3,164 @@ const path = require("path");
 const { MongoClient } = require("mongodb");
 
 const app = express();
-
 app.use(express.json());
-
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.sendStatus(200);
-  next();
-});
-
 app.use(express.static(path.join(__dirname)));
 
 const PORT = process.env.PORT || 10000;
 const MONGO_URI = process.env.MONGO_URI;
-const BOT_TOKEN = process.env.BOT_TOKEN;
 
 let db;
 
-function safeNumber(value, fallback = 0) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : fallback;
+// ================= HELPERS =================
+
+function safeNumber(v, d = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
 }
 
-function calculateLevel(xp) {
-  return Math.floor(Math.sqrt(safeNumber(xp, 0) / 100)) + 1;
-}
-
-function getUnlockedCharacters(level) {
-  const characters = ["DelayDoge"];
-  if (level >= 2) characters.push("Express Cat");
-  if (level >= 4) characters.push("Traffic Raccoon");
-  if (level >= 6) characters.push("Angry Karen");
-  if (level >= 8) characters.push("Customs Boss");
-  return characters;
-}
-
-function getTelegramUserFromInitData(initData) {
+function getTelegramUser(initData) {
   if (!initData) return null;
-
   const params = new URLSearchParams(initData);
-  const rawUser = params.get("user");
-
-  if (!rawUser) return null;
-
+  const user = params.get("user");
+  if (!user) return null;
   try {
-    const user = JSON.parse(rawUser);
-    if (!user || !user.id) return null;
-    return user;
+    return JSON.parse(user);
   } catch {
     return null;
   }
 }
 
-function normalizeTelegramUser(user) {
-  if (!user || !user.id) return null;
+// ================= PLAYER =================
 
-  return {
-    id: user.id,
-    username: user.username || "",
-    firstName: user.first_name || user.firstName || "",
-    lastName: user.last_name || user.lastName || "",
-    photoUrl: user.photo_url || user.photoUrl || ""
-  };
-}
+async function getPlayer(initData) {
+  const tg = getTelegramUser(initData);
+  if (!tg) return null;
 
-async function findOrCreatePlayer({ initData, telegramUser }) {
-  let rawUser = getTelegramUserFromInitData(initData);
-
-  if (!rawUser && telegramUser) {
-    rawUser = telegramUser;
-  }
-
-  const tgUser = normalizeTelegramUser(rawUser);
-
-  if (!tgUser) {
-    return { error: "Invalid Telegram user" };
-  }
-
-  const userId = `tg_${tgUser.id}`;
-  const now = new Date();
+  const userId = "tg_" + tg.id;
 
   await db.collection("users").updateOne(
     { userId },
     {
       $setOnInsert: {
         userId,
-        telegramId: tgUser.id,
         points: 0,
         xp: 0,
-        taps: 0,
         energy: 100,
-        maxEnergy: 100,
-        combo: 1,
-        lastTapAt: 0,
-        createdAt: now
-      },
-      $set: {
-        username: tgUser.username,
-        firstName: tgUser.firstName,
-        lastName: tgUser.lastName,
-        photoUrl: tgUser.photoUrl,
-        updatedAt: now
+        taps: 0,
+        lastTap: 0,
+        lastSync: 0,
+        suspicious: 0
       }
     },
     { upsert: true }
   );
 
-  const player = await db.collection("users").findOne({ userId });
-  return { player };
+  return await db.collection("users").findOne({ userId });
 }
+
+// ================= ROUTES =================
 
 app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+// -------- AUTH --------
+
+app.post("/auth", async (req, res) => {
+  const { initData } = req.body;
+  const player = await getPlayer(initData);
+
+  if (!player) {
+    return res.status(403).json({ error: "Invalid Telegram data" });
+  }
+
+  res.json({ player });
+});
+
+// -------- TAP --------
+
+app.post("/tap", async (req, res) => {
+  const { initData, taps } = req.body;
+  const player = await getPlayer(initData);
+
+  if (!player) {
+    return res.status(403).json({ error: "Invalid Telegram data" });
+  }
+
+  const now = Date.now();
+
+  let energy = safeNumber(player.energy, 100);
+  let points = safeNumber(player.points, 0);
+  let xp = safeNumber(player.xp, 0);
+  let totalTaps = safeNumber(player.taps, 0);
+
+  let suspicious = safeNumber(player.suspicious, 0);
+
+  const t = Math.floor(safeNumber(taps, 0));
+
+  // ===== Anti Cheat =====
+
+  if (t > 30) {
+    suspicious++;
+  }
+
+  if (player.lastSync && now - player.lastSync < 700) {
+    suspicious++;
+  }
+
+  if (suspicious >= 5) {
+    return res.status(429).json({ error: "Too fast" });
+  }
+
+  const allowed = Math.min(t, energy);
+
+  let gain = 0;
+
+  for (let i = 0; i < allowed; i++) {
+    gain += 1;
+  }
+
+  points += gain;
+  xp += gain * 2;
+  energy -= allowed;
+  totalTaps += allowed;
+
+  await db.collection("users").updateOne(
+    { userId: player.userId },
+    {
+      $set: {
+        points,
+        xp,
+        energy,
+        lastSync: now,
+        suspicious
+      },
+      $inc: {
+        taps: allowed
+      }
+    }
+  );
+
   res.json({
-    success: true,
-    status: "online",
-    app: "DelayDoge API",
-    time: new Date()
+    points,
+    xp,
+    energy,
+    taps: totalTaps
   });
 });
 
-app.post("/auth/telegram", async (req, res) => {
-  try {
-    const { initData, telegramUser } = req.body;
-
-    const result = await findOrCreatePlayer({ initData, telegramUser });
-
-    if (result.error) {
-      return res.status(403).json({
-        success: false,
-        message: result.error
-      });
-    }
-
-    const player = result.player;
-    const level = calculateLevel(player.xp || 0);
-
-    res.json({
-      success: true,
-      player: {
-        ...player,
-        level,
-        unlockedCharacters: getUnlockedCharacters(level)
-      }
-    });
-  } catch (e) {
-    console.error("AUTH ERROR:", e);
-    res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
-  }
-});
-
-app.post("/tap-sync", async (req, res) => {
-  try {
-    const { initData, telegramUser, taps } = req.body;
-
-    const result = await findOrCreatePlayer({ initData, telegramUser });
-
-    if (result.error) {
-      return res.status(403).json({
-        success: false,
-        message: result.error
-      });
-    }
-
-    const player = result.player;
-    const now = Date.now();
-
-    let energy = safeNumber(player.energy, 100);
-    let points = safeNumber(player.points, 0);
-    let xp = safeNumber(player.xp, 0);
-    let totalTaps = safeNumber(player.taps, 0);
-
-    let combo = safeNumber(player.combo, 1);
-    let lastTapAt = safeNumber(player.lastTapAt, 0);
-
-    const requestedTaps = Math.floor(safeNumber(taps, 0));
-    const safeTaps = Math.max(0, Math.min(requestedTaps, 30));
-    const allowedTaps = Math.min(safeTaps, energy);
-
-    let pointsGain = 0;
-    let xpGain = 0;
-
-    for (let i = 0; i < allowedTaps; i++) {
-      const virtualTapTime = now + i * 120;
-      const gap = lastTapAt ? virtualTapTime - lastTapAt : 9999;
-
-      if (gap <= 900) {
-        combo = Math.min(combo + 1, 5);
-      } else {
-        combo = 1;
-      }
-
-      pointsGain += combo;
-      xpGain += combo * 2;
-      lastTapAt = virtualTapTime;
-    }
-
-    points += pointsGain;
-    xp += xpGain;
-    energy = Math.max(0, energy - allowedTaps);
-    totalTaps += allowedTaps;
-
-    const level = calculateLevel(xp);
-
-    await db.collection("users").updateOne(
-      { userId: player.userId },
-      {
-        $set: {
-          points,
-          xp,
-          energy,
-          level,
-          combo,
-          lastTapAt,
-          unlockedCharacters: getUnlockedCharacters(level),
-          updatedAt: new Date()
-        },
-        $inc: {
-          taps: allowedTaps
-        }
-      }
-    );
-
-    res.json({
-      success: true,
-      points,
-      xp,
-      taps: totalTaps,
-      energy,
-      level,
-      combo,
-      multiplier: combo,
-      unlockedCharacters: getUnlockedCharacters(level),
-      gained: {
-        points: pointsGain,
-        xp: xpGain,
-        taps: allowedTaps
-      }
-    });
-  } catch (e) {
-    console.error("TAP SYNC ERROR:", e);
-    res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
-  }
-});
+// ================= START =================
 
 async function start() {
-  if (!MONGO_URI) throw new Error("Missing MONGO_URI");
-  if (!BOT_TOKEN) throw new Error("Missing BOT_TOKEN");
-
   const client = new MongoClient(MONGO_URI);
   await client.connect();
-
   db = client.db("delaydoge");
-  await db.collection("users").createIndex({ userId: 1 }, { unique: true });
 
-  console.log("✅ MongoDB Connected");
+  console.log("Mongo Connected");
 
   app.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
+    console.log("Server running on", PORT);
   });
 }
 
-start().catch((err) => {
-  console.error("❌ Server failed to start:", err);
-  process.exit(1);
-});
+start();
