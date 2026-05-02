@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V12 Stable Sync</title>
+<title>DelayDoge V13 Stable Sync</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -320,6 +320,7 @@ async function loginUser() {
       method: "POST",
       body: JSON.stringify({
         initData: tgInitData,
+        telegramUser: tgUser,
         referralCode
       })
     });
@@ -390,7 +391,7 @@ function getRank() {
 }
 
 function tapDeliver(e) {
-  if (!userId || !tgInitData) {
+  if (!userId || !tgUser) {
     showPopup("Open from Telegram");
     return;
   }
@@ -431,7 +432,7 @@ function tapDeliver(e) {
 }
 
 async function syncTapBuffer() {
-  if (syncInProgress || !userId || !tgInitData || tapBuffer <= 0) return;
+  if (syncInProgress || !userId || !tgUser || tapBuffer <= 0) return;
 
   syncInProgress = true;
 
@@ -443,6 +444,7 @@ async function syncTapBuffer() {
       method: "POST",
       body: JSON.stringify({
         initData: tgInitData,
+        telegramUser: tgUser,
         taps: tapsToSend
       })
     });
@@ -647,11 +649,11 @@ setInterval(() => {
 }, 2000);
 
 window.addEventListener("beforeunload", () => {
-  if (userId && tgInitData && tapBuffer > 0) {
+  if (userId && tgUser && tapBuffer > 0) {
     navigator.sendBeacon(
       API_BASE + "/tap-sync",
       new Blob(
-        [JSON.stringify({ initData: tgInitData, taps: Math.min(tapBuffer, 30) })],
+        [JSON.stringify({ initData: tgInitData, telegramUser: tgUser, taps: Math.min(tapBuffer, 30) })],
         { type: "application/json" }
       )
     );
