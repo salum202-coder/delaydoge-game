@@ -1,3 +1,5 @@
+
+
 const express = require("express");
 const path = require("path");
 const { MongoClient } = require("mongodb");
@@ -6,7 +8,7 @@ const app = express();
 
 /* ================= CORS FIX ================= */
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "https://delaydoge-game.onrender.com");
+  res.setHeader("Access-Control-Allow-Origin", "[https://delaydoge-game.onrender.com](https://delaydoge-game.onrender.com)");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Max-Age", "86400");
