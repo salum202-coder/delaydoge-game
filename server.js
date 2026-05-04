@@ -72,21 +72,6 @@ function getTelegramUser(initData) {
 }
 
 function applyEnergyRegen(player) {
-  const now = Date.now();
-
-  let energy = safeNumber(player.energy, MAX_ENERGY);
-  let lastEnergyAt = safeNumber(player.lastEnergyAt, now);
-
-  if (!player.lastEnergyAt) {
-    lastEnergyAt = now;
-  }
-
-  if (energy >= MAX_ENERGY) {
-    return {
-      energy: MAX_ENERGY,
-      lastEnergyAt: now
-    };
-  }
 
   const elapsed = Math.max(0, now - lastEnergyAt);
   const gained = Math.floor(elapsed / ENERGY_REGEN_MS);
