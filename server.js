@@ -103,6 +103,32 @@ function applyEnergyRegen(player) {
 
   return {
     energy: newEnergy,
+    lastEnergyAt: newEnergy >= MAX_ENERGY
+      ? now
+      : lastEnergyAt + gained * ENERGY_REGEN_MS
+  };
+}
+
+  let lastEnergyAt = safeNumber(player.lastEnergyAt, now);
+
+  if (energy >= MAX_ENERGY) {
+    return {
+      energy: MAX_ENERGY,
+      lastEnergyAt: now
+    };
+  }
+
+  const elapsed = Math.max(0, now - lastEnergyAt);
+  const gained = Math.floor(elapsed / ENERGY_REGEN_MS);
+
+  if (gained <= 0) {
+    return { energy, lastEnergyAt };
+  }
+
+  const newEnergy = Math.min(MAX_ENERGY, energy + gained);
+
+  return {
+    energy: newEnergy,
     lastEnergyAt: newEnergy >= MAX_ENERGY ? now : lastEnergyAt + gained * ENERGY_REGEN_MS
   };
 }
