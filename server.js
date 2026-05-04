@@ -107,6 +107,21 @@ function applyEnergyRegen(player) {
   };
 }
 
+  const elapsed = Math.max(0, now - lastEnergyAt);
+  const gained = Math.floor(elapsed / ENERGY_REGEN_MS);
+
+  if (gained <= 0) {
+    return { energy, lastEnergyAt };
+  }
+
+  const newEnergy = Math.min(MAX_ENERGY, energy + gained);
+
+  return {
+    energy: newEnergy,
+    lastEnergyAt: newEnergy >= MAX_ENERGY ? now : lastEnergyAt + gained * ENERGY_REGEN_MS
+  };
+}
+
 async function getPlayer(initData) {
   const tg = getTelegramUser(initData);
   if (!tg || !tg.id) return null;
