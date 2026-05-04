@@ -1,10 +1,9 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V15</title>
+<title>DelayDoge V16 Stable Server Sync</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -20,23 +19,12 @@ body{min-height:100vh;background:linear-gradient(180deg,#050814,#101b33,#070b18)
 .coins{font-size:42px;font-weight:900;color:#f7c843;margin:5px 0}
 .sub{font-size:13px;color:#cbd8ff}
 .game-card{background:#0f1b33;border:1px solid #2b4376;border-radius:30px;padding:20px;text-align:center;position:relative;overflow:hidden;box-shadow:0 0 35px rgba(0,0,0,.45)}
-.game-card.rare-flash{animation:rareFlash .45s ease}
-@keyframes rareFlash{0%{box-shadow:0 0 35px rgba(0,0,0,.45)}50%{box-shadow:0 0 70px rgba(247,200,67,.7)}100%{box-shadow:0 0 35px rgba(0,0,0,.45)}}
-
-.mascot{
-width:215px;height:215px;border-radius:50%;margin:8px auto 18px;
-background:radial-gradient(circle,#f7c843,#d88922);
-display:flex;align-items:center;justify-content:center;
-border:6px solid #203869;box-shadow:0 0 35px rgba(247,200,67,.28);
-user-select:none;cursor:pointer;touch-action:manipulation;overflow:hidden;position:relative;
-transition:.15s;animation:idleFloat 2.4s ease-in-out infinite;
-}
+.mascot{width:215px;height:215px;border-radius:50%;margin:8px auto 18px;background:radial-gradient(circle,#f7c843,#d88922);display:flex;align-items:center;justify-content:center;border:6px solid #203869;box-shadow:0 0 35px rgba(247,200,67,.28);user-select:none;cursor:pointer;touch-action:manipulation;overflow:hidden;position:relative;transition:.15s;animation:idleFloat 2.4s ease-in-out infinite}
 .mascot:active{transform:scale(.94);box-shadow:0 0 48px rgba(247,200,67,.6)}
 .mascot.tap-pulse{animation:tapPulse .22s ease}
 @keyframes tapPulse{0%{transform:scale(1)}50%{transform:scale(.93)}100%{transform:scale(1)}}
 #mainDoge{width:96%;height:96%;object-fit:contain;border-radius:50%;pointer-events:none;filter:drop-shadow(0 0 10px rgba(0,0,0,.35))}
 @keyframes idleFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-
 .tap-text{font-size:25px;font-weight:900;color:#f7c843;margin-bottom:8px}
 .combo{font-size:16px;font-weight:900;color:#35d07f;margin-bottom:10px}
 .combo.fire{color:#f7c843;text-shadow:0 0 14px rgba(247,200,67,.8);animation:firePulse .6s ease infinite alternate}
@@ -44,7 +32,7 @@ transition:.15s;animation:idleFloat 2.4s ease-in-out infinite;
 .status{min-height:58px;background:#081125;border:1px solid #2b4376;border-radius:18px;padding:13px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1.35;color:#dbe5ff;margin-bottom:14px}
 .energy-top{display:flex;justify-content:space-between;font-size:13px;color:#9fb4ef;margin-bottom:6px}
 .energy-bar{width:100%;height:14px;background:#081125;border-radius:999px;overflow:hidden;border:1px solid #2b4376}
-.energy-fill{height:100%;width:100%;background:linear-gradient(90deg,#35d07f,#f7c843);transition:.1s}
+.energy-fill{height:100%;width:100%;background:linear-gradient(90deg,#35d07f,#f7c843);transition:.2s}
 .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:13px}
 .box{background:#081125;border:1px solid #2b4376;border-radius:17px;padding:12px 8px}
 .small{font-size:11px;color:#9fb4ef;margin-bottom:5px}
@@ -66,31 +54,13 @@ transition:.15s;animation:idleFloat 2.4s ease-in-out infinite;
 @keyframes floatUp{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-70px) scale(1.35)}}
 .coin-particle{position:absolute;width:9px;height:9px;border-radius:50%;background:#f7c843;box-shadow:0 0 12px rgba(247,200,67,.75);pointer-events:none;animation:coinBurst .7s ease-out forwards}
 @keyframes coinBurst{from{opacity:1;transform:translate(0,0) scale(1)}to{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
-
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:120;padding:20px}
-.modal{
-width:100%;max-width:370px;background:linear-gradient(180deg,#102044,#081125);
-border:2px solid #f7c843;border-radius:30px;padding:22px 18px;text-align:center;
-box-shadow:0 0 55px rgba(247,200,67,.38);animation:eventPop .22s ease-out;
-}
-@keyframes eventPop{from{transform:scale(.9);opacity:.3}to{transform:scale(1);opacity:1}}
-.event-image{width:210px;height:210px;object-fit:contain;margin:0 auto 12px;display:none;filter:drop-shadow(0 0 18px rgba(247,200,67,.45))}
-.modal-icon{font-size:78px;margin-bottom:12px}
-.modal-title{font-size:28px;color:#f7c843;font-weight:900;margin-bottom:10px}
-.modal-text{font-size:16px;color:#fff;margin-bottom:18px;line-height:1.5}
-.event-effect{font-size:14px;color:#35d07f;font-weight:900;margin-bottom:12px}
-
 .telegram-only{min-height:100vh;width:100%;max-width:430px;display:none;align-items:center;justify-content:center;text-align:center;padding:24px}
 .telegram-only-card{background:#0f1b33;border:1px solid #2b4376;border-radius:28px;padding:24px}
 .telegram-only-card h2{color:#f7c843;margin-bottom:10px}
 .telegram-only-card p{color:#cbd8ff;line-height:1.6;font-size:15px}
 .invite-link{font-size:12px;color:#cbd8ff;word-break:break-all;background:#081125;border:1px solid #2b4376;border-radius:14px;padding:10px;margin-top:8px}
-.flash{animation:flash .35s ease}
-@keyframes flash{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
-.shake{animation:shake .25s}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .gang-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.gang-card{background:#081125;border:1px solid #2b4376;border-radius:18px;padding:12px;text-align:center;min-height:205px;position:relative;overflow:hidden}
+.gang-card{background:#081125;border:1px solid #2b4376;border-radius:18px;padding:12px;text-align:center;min-height:145px;position:relative;overflow:hidden}
 .gang-icon{font-size:42px;margin-bottom:7px}
 .gang-img{width:100%;height:108px;object-fit:contain;background:#ffffff;border-radius:14px;margin-bottom:8px;border:1px solid #2b4376}
 .gang-name{font-weight:900;color:#f7c843;font-size:14px;margin-bottom:4px}
@@ -103,27 +73,14 @@ box-shadow:0 0 55px rgba(247,200,67,.38);animation:eventPop .22s ease-out;
 </head>
 
 <body>
-
 <div class="telegram-only" id="telegramOnly">
   <div class="telegram-only-card">
-    <h2>🐶 Play inside Telegram</h2>
-    <p>Please open the game using the official Play button inside our Telegram bot to save your progress.</p>
-    <p style="font-size: 11px; margin-top: 10px; color: #ff6b6b;">(Ensure the Bot button is configured as a Web App, not a regular URL)</p>
+    <h2>🐶 Open from Telegram</h2>
+    <p>افتح اللعبة من زر Play DelayDoge داخل البوت عشان تنحفظ نقاطك بنفس الحساب.</p>
   </div>
 </div>
 
 <div class="popup" id="popup">+1</div>
-
-<div class="overlay" id="modalOverlay">
-  <div class="modal">
-    <img id="eventImage" class="event-image" src="" alt="">
-    <div class="modal-icon" id="modalIcon">🎁</div>
-    <div class="modal-title" id="modalTitle">Loot Box</div>
-    <div class="modal-text" id="modalText">Reward</div>
-    <div class="event-effect" id="eventEffect"></div>
-    <button class="btn full" onclick="closeModal()">CONTINUE</button>
-  </div>
-</div>
 
 <div class="app" id="app">
   <div class="header">
@@ -135,7 +92,7 @@ box-shadow:0 0 55px rgba(247,200,67,.38);animation:eventPop .22s ease-out;
     <div class="card">
       <div class="label">Your Delay Points</div>
       <div class="coins" id="coins">0</div>
-      <div class="sub">Tap fast. Build combo. Unlock the Delay Gang.</div>
+      <div class="sub">Server-saved points only. No fake local score.</div>
     </div>
 
     <div class="game-card" id="gameCard">
@@ -145,7 +102,7 @@ box-shadow:0 0 55px rgba(247,200,67,.38);animation:eventPop .22s ease-out;
 
       <div class="tap-text">TAP DELAYDOGE</div>
       <div class="combo" id="comboText">Combo: x1</div>
-      <div class="status" id="status">DelayDoge is waiting for the next package...</div>
+      <div class="status" id="status">Loading player data...</div>
 
       <div class="energy-top"><span>Energy</span><span id="energyText">100/100</span></div>
       <div class="energy-bar"><div class="energy-fill" id="energyFill"></div></div>
@@ -159,16 +116,15 @@ box-shadow:0 0 55px rgba(247,200,67,.38);animation:eventPop .22s ease-out;
 
     <div class="section">
       <h3>🔥 Live Feed</h3>
-      <div class="feed" id="feed">Loading player data...</div>
+      <div class="feed" id="feed">Connecting to server...</div>
     </div>
   </div>
 
   <div id="tasksPage" class="hidden">
     <div class="section">
       <h3>✅ Daily Missions</h3>
-      <div class="task"><span>Tap 50 times</span><button class="btn" onclick="comingSoon()">Claim</button></div>
-      <div class="task"><span>Daily Streak Reward</span><button class="btn" onclick="comingSoon()">Claim</button></div>
-      <div class="task"><span>Open Mystery Box</span><button class="btn" onclick="comingSoon()">Open</button></div>
+      <div class="task"><span>Tap 50 times</span><button class="btn" onclick="comingSoon()">Soon</button></div>
+      <div class="task"><span>Daily Streak Reward</span><button class="btn" onclick="comingSoon()">Soon</button></div>
       <button class="btn full dark" onclick="shareTelegram()">📨 Share DelayDoge</button>
     </div>
   </div>
@@ -188,10 +144,6 @@ box-shadow:0 0 55px rgba(247,200,67,.38);animation:eventPop .22s ease-out;
       <h3>🐾 Delay Gang</h3>
       <div class="gang-grid" id="gangGrid"></div>
     </div>
-    <div class="section">
-      <h3>🎭 Skins</h3>
-      <div class="gang-grid" id="skinsGrid"></div>
-    </div>
   </div>
 </div>
 
@@ -207,9 +159,10 @@ const API_BASE = "https://delaydoge-api.onrender.com";
 
 let tg = null;
 let tgUser = null;
-let referralCode = null;
 let userId = null;
 let tgInitData = "";
+let isReady = false;
+let syncInProgress = false;
 
 let coins = 0;
 let xp = 0;
@@ -217,33 +170,14 @@ let taps = 0;
 let energy = 100;
 let level = 1;
 let combo = 1;
-let lastTapTime = 0;
-
-let tapBuffer = 0;
-let syncInProgress = false;
-
-const statuses = [
-  "DelayDoge moved the package 2 meters. Bullish 📦",
-  "Driver took lunch and vanished 🍔",
-  "Out for delivery since yesterday 😂",
-  "Package delayed emotionally 😭",
-  "Tracking says: still suffering",
-  "Warehouse forgot it exists 💀",
-  "Delivered to someone named Not You",
-  "Customs opened it for emotional support."
-];
 
 const gang = [
   {icon:"🐶",img:"assets/characters/delaydoge-official.png",name:"DelayDoge",role:"The Main Legend",desc:"Cold, late, and proud.",unlock:0},
   {icon:"⚡",img:"assets/characters/express-cat.png",name:"Express Cat",role:"The Rival",desc:"Fast and furious.",unlock:300},
-  {icon:"🛃",img:"assets/characters/customs-boss.png",name:"Customs Boss",role:"The Gatekeeper",desc:"Stops packages.",unlock:1800}
+  {icon:"🛃",img:"assets/characters/customs-boss.png",name:"Customs Boss",role:"The Gatekeeper",desc:"Stops packages.",unlock:1800},
+  {icon:"😡",img:"assets/characters/angry-karen.png",name:"Angry Karen",role:"Queen of Complaints",desc:"Resets combo.",unlock:2400},
+  {icon:"🚦",img:"assets/characters/traffic-raccoon.png",name:"Traffic Raccoon",role:"Chaos Worker",desc:"Random traffic.",unlock:4000}
 ];
-
-function showTelegramOnly() {
-  document.getElementById("app").style.display = "none";
-  document.getElementById("nav").style.display = "none";
-  document.getElementById("telegramOnly").style.display = "flex";
-}
 
 function bootTelegram() {
   tg = window.Telegram?.WebApp || null;
@@ -252,7 +186,7 @@ function bootTelegram() {
       tg = window.Telegram?.WebApp || null;
       if (!tg) return showTelegramOnly();
       continueBoot();
-    }, 1000);
+    }, 800);
     return;
   }
   continueBoot();
@@ -267,20 +201,29 @@ function continueBoot() {
   setTimeout(() => {
     tgInitData = tg?.initData || "";
     tgUser = tg?.initDataUnsafe?.user || null;
-    
-    if (!tgUser || !tgUser.id) return showTelegramOnly();
-    
+
+    if (!tgUser || !tgUser.id || !tgInitData) {
+      return showTelegramOnly();
+    }
+
     userId = "tg_" + tgUser.id;
-    refresh();
     loginUser();
   }, 500);
 }
 
-async function api(path, options = {}) {
+function showTelegramOnly() {
+  document.getElementById("app").style.display = "none";
+  document.getElementById("nav").style.display = "none";
+  document.getElementById("telegramOnly").style.display = "flex";
+}
+
+async function api(path, body) {
   const res = await fetch(API_BASE + path, {
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-    ...options
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(body || {})
   });
+
   const data = await res.json().catch(() => ({}));
   if (!res.ok && !data.error) data.error = "Request failed";
   return data;
@@ -288,31 +231,53 @@ async function api(path, options = {}) {
 
 async function loginUser() {
   try {
-    const result = await api("/auth", {
-      method: "POST",
-      body: JSON.stringify({ initData: tgInitData })
-    });
+    const result = await api("/auth", { initData: tgInitData });
 
     if (result.error || !result.player) {
-      setFeed("Login failed.");
+      showPopup(result.error || "Login failed");
+      setFeed("Login failed. Please reopen from Telegram.");
       return;
     }
 
     applyPlayer(result.player);
-    setFeed("Player loaded safely ✅");
+    isReady = true;
+    setFeed("Player loaded safely ✅<br>All points are saved by the server.");
+    document.getElementById("status").innerText = "Ready. Tap DelayDoge 🐶📦";
   } catch (e) {
-    setFeed("Server sync issue.");
+    setFeed("Server sync issue. Try again.");
+    showPopup("Sync issue");
   }
 }
 
 function applyPlayer(p) {
-  if (!p) return;
   coins = Number(p.points ?? 0);
   xp = Number(p.xp ?? 0);
   taps = Number(p.taps ?? 0);
   energy = Number(p.energy ?? 100);
-  level = Number(p.level ?? Math.floor(Math.sqrt(xp / 100)) + 1);
+  level = Number(p.level ?? calculateLevel(xp));
+  combo = Number(p.combo ?? 1);
+
+  if (!Number.isFinite(coins)) coins = 0;
+  if (!Number.isFinite(xp)) xp = 0;
+  if (!Number.isFinite(taps)) taps = 0;
+  if (!Number.isFinite(energy)) energy = 100;
+  if (!Number.isFinite(level)) level = calculateLevel(xp);
+  if (!Number.isFinite(combo)) combo = 1;
+
   refresh();
+}
+
+function calculateLevel(value) {
+  return Math.floor(Math.sqrt(Number(value || 0) / 100)) + 1;
+}
+
+function getRank() {
+  if (xp >= 10000) return "Delay King";
+  if (xp >= 5000) return "Delivery Legend";
+  if (xp >= 2500) return "Customs Boss";
+  if (xp >= 1000) return "Lost Parcel";
+  if (xp >= 300) return "Delayed";
+  return "Rookie";
 }
 
 function refresh() {
@@ -322,71 +287,63 @@ function refresh() {
   document.getElementById("level").innerText = level;
   document.getElementById("energyText").innerText = energy + "/100";
   document.getElementById("energyFill").style.width = Math.max(0, Math.min(100, energy)) + "%";
-}
-
-// Immediate updates for extreme fast response
-function tapDeliver(e) {
-  if (!userId || !tgUser) return;
-  if (energy <= 0) return;
-
-  const now = Date.now();
-  combo = now - lastTapTime < 650 ? Math.min(combo + 1, 5) : 1;
-  lastTapTime = now;
-
-  // Optimistic UI updates
-  coins += combo;
-  xp += (combo * 2);
-  energy -= 1;
-  taps += 1;
-  level = Math.floor(Math.sqrt(xp / 100)) + 1;
-
-  document.getElementById("coins").innerText = coins;
-  document.getElementById("xp").innerText = xp;
-  document.getElementById("taps").innerText = taps;
-  document.getElementById("level").innerText = level;
-  document.getElementById("energyText").innerText = energy + "/100";
-  document.getElementById("energyFill").style.width = Math.max(0, Math.min(100, energy)) + "%";
+  document.getElementById("rank").innerText = getRank();
 
   const comboText = document.getElementById("comboText");
   comboText.innerText = combo >= 4 ? "🔥 FIRE COMBO x" + combo : "Combo: x" + combo;
   comboText.classList.toggle("fire", combo >= 4);
 
-  createFloat(e, "+" + combo);
-  createCoinBurst(e);
-  pulseMascot();
+  if (userId) document.getElementById("inviteLink").innerText = getInviteLink();
 
-  if (navigator.vibrate) navigator.vibrate(22);
-
-  tapBuffer++;
-  if (tapBuffer >= 10) {
-    syncTapBuffer();
-  }
+  renderGang();
 }
 
-async function syncTapBuffer() {
-  if (syncInProgress || tapBuffer <= 0) return;
+async function tapDeliver(e) {
+  if (!isReady || syncInProgress) {
+    showPopup("Syncing...");
+    return;
+  }
+
+  if (energy <= 0) {
+    document.getElementById("status").innerText = "Energy empty. Wait for recharge ⚡";
+    return;
+  }
 
   syncInProgress = true;
-  const tapsToSend = Math.min(tapBuffer, 30);
-  tapBuffer -= tapsToSend;
+
+  pulseMascot();
+  createFloat(e, "+");
+  createCoinBurst(e);
+  if (navigator.vibrate) navigator.vibrate(18);
 
   try {
     const r = await api("/tap", {
-      method: "POST",
-      body: JSON.stringify({ initData: tgInitData, taps: tapsToSend })
+      initData: tgInitData,
+      taps: 1
     });
 
-    if (!r.error) {
-      document.getElementById("status").innerText = "Synced safely ✅";
+    if (r.error) {
+      showPopup(r.error);
+      document.getElementById("status").innerText = r.error;
     } else {
-      tapBuffer += tapsToSend;
+      coins = Number(r.points ?? coins);
+      xp = Number(r.xp ?? xp);
+      taps = Number(r.taps ?? taps);
+      energy = Number(r.energy ?? energy);
+      level = Number(r.level ?? calculateLevel(xp));
+      combo = Number(r.combo ?? combo);
+
+      const gained = r.gained?.points ?? 0;
+      document.getElementById("status").innerText = gained > 0 ? `Saved +${gained} points ✅` : "Saved ✅";
+      createFloat(e, "+" + gained);
+      refresh();
     }
-  } catch (e) {
-    tapBuffer += tapsToSend;
+  } catch (err) {
+    showPopup("Sync issue");
+    document.getElementById("status").innerText = "Connection issue. Try again.";
   }
 
   syncInProgress = false;
-  if (tapBuffer > 0) setTimeout(syncTapBuffer, 250);
 }
 
 function pulseMascot() {
@@ -431,52 +388,74 @@ function createFloat(e, text) {
   setTimeout(() => f.remove(), 800);
 }
 
+function renderGang() {
+  const gangGrid = document.getElementById("gangGrid");
+  if (!gangGrid) return;
+
+  gangGrid.innerHTML = gang.map(c => {
+    const open = xp >= c.unlock;
+    return `<div class="gang-card ${open ? "" : "locked"}">
+      <div class="badge ${open ? "unlocked" : ""}">${open ? "OPEN" : c.unlock + " XP"}</div>
+      ${open && c.img ? `<img class="gang-img" src="${c.img}" alt="${c.name}">` : `<div class="gang-icon">${open ? c.icon : "🔒"}</div>`}
+      <div class="gang-name">${c.name}</div>
+      <div class="gang-role">${c.role}</div>
+      <div class="gang-desc">${c.desc}</div>
+    </div>`;
+  }).join("");
+}
+
 function showPage(p) {
   ["home", "tasks", "invite", "gang"].forEach(x => {
     document.getElementById(x + "Page").classList.add("hidden");
     document.getElementById("nav" + cap(x)).classList.remove("active");
   });
+
   document.getElementById(p + "Page").classList.remove("hidden");
   document.getElementById("nav" + cap(p)).classList.add("active");
+
+  if (p === "gang") renderGang();
 }
 
-function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-function setFeed(html) { document.getElementById("feed").innerHTML = html; }
-function comingSoon() { 
+function cap(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function setFeed(html) {
+  document.getElementById("feed").innerHTML = html;
+}
+
+function showPopup(t) {
   const p = document.getElementById("popup");
-  p.innerText = "Coming soon 🚧";
+  p.innerText = t;
   p.classList.add("show");
   setTimeout(() => p.classList.remove("show"), 1200);
 }
 
+function comingSoon() {
+  showPopup("Coming soon 🚧");
+}
+
+function getInviteLink() {
+  return "https://t.me/DelayDogeGameBot?start=" + encodeURIComponent(userId || "delaydoge");
+}
+
+async function copyInvite() {
+  try {
+    await navigator.clipboard.writeText(getInviteLink());
+    showPopup("Invite copied 🔗");
+  } catch (e) {
+    showPopup("Copy failed");
+  }
+}
+
 function shareTelegram() {
-  const link = "https://t.me/DelayDogeGameBot?start=" + (userId || "delaydoge");
-  const msg = `I’m playing DelayDoge 🐶📦\nTap fast. Earn the meme.\n\n${link}`;
+  const link = getInviteLink();
+  const msg = `I’m playing DelayDoge 🐶📦\nTap DelayDoge. Earn the meme.\n\n${link}`;
   window.open("https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(msg), "_blank");
 }
 
-function copyInvite() {
-  const link = "https://t.me/DelayDogeGameBot?start=" + (userId || "delaydoge");
-  navigator.clipboard.writeText(link).then(() => {
-    const p = document.getElementById("popup");
-    p.innerText = "Copied! 🔗";
-    p.classList.add("show");
-    setTimeout(() => p.classList.remove("show"), 1200);
-  });
-}
-
-function closeModal() {
-  document.getElementById("modalOverlay").style.display = "none";
-}
-
-setInterval(() => {
-  if (tapBuffer > 0) syncTapBuffer();
-}, 2000);
-
 bootTelegram();
 </script>
+
 </body>
 </html>
-
-
-```
