@@ -4,7 +4,6 @@ const { MongoClient } = require("mongodb");
 
 const app = express();
 
-/* ================= CORS FIX ================= */
 app.use((req, res, next) => {
   const allowedOrigins = [
     "https://delaydoge-game.onrender.com",
@@ -23,9 +22,7 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
+  if (req.method === "OPTIONS") return res.sendStatus(200);
 
   next();
 });
@@ -36,9 +33,10 @@ app.use(express.static(path.join(__dirname)));
 const PORT = process.env.PORT || 10000;
 const MONGO_URI = process.env.MONGO_URI;
 
-let db;
+const MAX_ENERGY = 100;
+const ENERGY_REGEN_MS = 5000; // كل 5 ثواني يرجع 1 طاقة
 
-/* ================= HELPERS ================= */
+let db;
 
 function safeNumber(v, d = 0) {
   const n = Number(v);
@@ -73,109 +71,239 @@ function getTelegramUser(initData) {
   }
 }
 
-/* ================= PLAYER ================= */
+function applyEnergyRegen(player) {
+  const now = Date.now();
+
+  let energy = safeNumber(player.energy, MAX_ENERGY);
+  let lastEnergyAt = safeNumber(player.lastEnergyAt, now);
+
+  if (!player.lastEnergyAt) {
+    lastEnergyAt = now;
+  }
+
+  if (energy >= MAX_ENERGY) {
+    return {
+      energy: MAX_ENERGY,
+      lastEnergyAt: now
+    };
+  }
+
+  const elapsed = Math.max(0, now - lastEnergyAt);
+  const gained = Math.floor(elapsed / ENERGY_REGEN_MS);
+
+  if (gained <= 0) {
+    return { energy, lastEnergyAt };
+  }
+
+  const newEnergy = Math.min(MAX_ENERGY, energy + gained);
+
+  return {
+    energy: newEnergy,
+    lastEnergyAt: newEnergy >= MAX_ENERGY ? now : lastEnergyAt + gained * ENERGY_REGEN_MS
+  };
+}
 
 async function getPlayer(initData) {
   const tg = getTelegramUser(initData);
   if (!tg || !tg.id) return null;
 
   const userId = "tg_" + tg.id;
+  const now = Date.now();
 
   await db.collection("users").updateOne(
     { userId },
     {
       $setOnInsert: {
         userId,
+        telegramId: tg.id,
         points: 0,
         xp: 0,
-        energy: 100,
+        energy: MAX_ENERGY,
+        maxEnergy: MAX_ENERGY,
         taps: 0,
         combo: 1,
         lastTapAt: 0,
-        lastSyncAt: 0
+        lastSyncAt: 0,
+        lastEnergyAt: now,
+        suspicious: 0,
+        createdAt: new Date()
+      },
+      $set: {
+        username: tg.username || "",
+        firstName: tg.first_name || "",
+        lastName: tg.last_name || "",
+        photoUrl: tg.photo_url || "",
+        updatedAt: new Date()
       }
     },
     { upsert: true }
   );
 
-  return await db.collection("users").findOne({ userId });
+  const player = await db.collection("users").findOne({ userId });
+  const regen = applyEnergyRegen(player);
+
+  if (regen.energy !== player.energy || regen.lastEnergyAt !== player.lastEnergyAt) {
+    await db.collection("users").updateOne(
+      { userId },
+      {
+        $set: {
+          energy: regen.energy,
+          lastEnergyAt: regen.lastEnergyAt,
+          maxEnergy: MAX_ENERGY,
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    player.energy = regen.energy;
+    player.lastEnergyAt = regen.lastEnergyAt;
+    player.maxEnergy = MAX_ENERGY;
+  }
+
+  return player;
 }
 
-/* ================= ROUTES ================= */
-
 app.get("/health", (req, res) => {
-  res.json({ ok: true });
+  res.json({
+    ok: true,
+    app: "DelayDoge API",
+    energy: "regen-enabled"
+  });
 });
 
 app.post("/auth", async (req, res) => {
-  const player = await getPlayer(req.body.initData);
+  try {
+    const player = await getPlayer(req.body.initData);
 
-  if (!player) return res.status(403).json({ error: "Invalid Telegram data" });
-
-  res.json({
-    player: {
-      ...player,
-      level: calculateLevel(player.xp),
-      rank: getRank(player.xp)
+    if (!player) {
+      return res.status(403).json({ error: "Invalid Telegram data" });
     }
-  });
+
+    res.json({
+      player: {
+        ...player,
+        level: calculateLevel(player.xp),
+        rank: getRank(player.xp),
+        maxEnergy: MAX_ENERGY
+      }
+    });
+  } catch (e) {
+    console.error("AUTH ERROR:", e);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 app.post("/tap", async (req, res) => {
-  const player = await getPlayer(req.body.initData);
+  try {
+    const player = await getPlayer(req.body.initData);
 
-  if (!player) return res.status(403).json({ error: "Invalid Telegram data" });
-
-  let { points, xp, energy, taps, combo, lastTapAt } = player;
-
-  if (energy <= 0) {
-    return res.json(player);
-  }
-
-  const now = Date.now();
-
-  const gap = now - lastTapAt;
-
-  if (gap < 800) combo = Math.min(combo + 1, 5);
-  else combo = 1;
-
-  points += combo;
-  xp += combo * 2;
-  energy -= 1;
-  taps += 1;
-  lastTapAt = now;
-
-  await db.collection("users").updateOne(
-    { userId: player.userId },
-    {
-      $set: { points, xp, energy, taps, combo, lastTapAt }
+    if (!player) {
+      return res.status(403).json({ error: "Invalid Telegram data" });
     }
-  );
 
-  res.json({
-    points,
-    xp,
-    energy,
-    taps,
-    combo,
-    level: calculateLevel(xp),
-    rank: getRank(xp)
-  });
+    let points = safeNumber(player.points, 0);
+    let xp = safeNumber(player.xp, 0);
+    let energy = safeNumber(player.energy, MAX_ENERGY);
+    let taps = safeNumber(player.taps, 0);
+    let combo = safeNumber(player.combo, 1);
+    let lastTapAt = safeNumber(player.lastTapAt, 0);
+    let lastEnergyAt = safeNumber(player.lastEnergyAt, Date.now());
+
+    if (energy <= 0) {
+      return res.json({
+        points,
+        xp,
+        energy: 0,
+        maxEnergy: MAX_ENERGY,
+        taps,
+        combo,
+        level: calculateLevel(xp),
+        rank: getRank(xp),
+        gained: { points: 0, xp: 0, taps: 0 },
+        message: "Energy empty. Wait for recharge."
+      });
+    }
+
+    const now = Date.now();
+    const gap = lastTapAt ? now - lastTapAt : 9999;
+
+    if (gap < 800) combo = Math.min(combo + 1, 5);
+    else combo = 1;
+
+    const pointsGain = combo;
+    const xpGain = combo * 2;
+
+    points += pointsGain;
+    xp += xpGain;
+    energy = Math.max(0, energy - 1);
+    taps += 1;
+    lastTapAt = now;
+
+    if (energy === 0) {
+      lastEnergyAt = now;
+    }
+
+    const level = calculateLevel(xp);
+    const rank = getRank(xp);
+
+    await db.collection("users").updateOne(
+      { userId: player.userId },
+      {
+        $set: {
+          points,
+          xp,
+          energy,
+          maxEnergy: MAX_ENERGY,
+          taps,
+          combo,
+          lastTapAt,
+          lastEnergyAt,
+          level,
+          rank,
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    res.json({
+      points,
+      xp,
+      energy,
+      maxEnergy: MAX_ENERGY,
+      taps,
+      combo,
+      level,
+      rank,
+      gained: {
+        points: pointsGain,
+        xp: xpGain,
+        taps: 1
+      }
+    });
+  } catch (e) {
+    console.error("TAP ERROR:", e);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
-/* ================= START ================= */
-
 async function start() {
+  if (!MONGO_URI) throw new Error("Missing MONGO_URI");
+
   const client = new MongoClient(MONGO_URI);
   await client.connect();
 
   db = client.db("delaydoge");
 
-  console.log("Mongo connected");
+  await db.collection("users").createIndex({ userId: 1 }, { unique: true });
+
+  console.log("✅ MongoDB Connected");
 
   app.listen(PORT, () => {
-    console.log("Server running");
+    console.log(`✅ Server running on port ${PORT}`);
   });
 }
 
-start();
+start().catch((err) => {
+  console.error("❌ Server failed to start:", err);
+  process.exit(1);
+});
