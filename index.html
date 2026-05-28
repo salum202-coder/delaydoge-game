@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V17 Daily Rewards</title>
+<title>DelayDoge V18 Referral Fix</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -213,6 +213,56 @@ const gang = [
   {icon:"🚦",img:"assets/characters/traffic-raccoon.png",name:"Traffic Raccoon",role:"Chaos Worker",desc:"Random traffic.",unlock:4000}
 ];
 
+
+function cleanReferralCode(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9_\-]/g, "")
+    .slice(0, 80);
+}
+
+function getUrlReferralCode() {
+  const candidates = [];
+
+  try {
+    const url = new URL(window.location.href);
+    candidates.push(url.searchParams.get("ref"));
+    candidates.push(url.searchParams.get("startapp"));
+    candidates.push(url.searchParams.get("start"));
+
+    const hashText = url.hash || "";
+    const hashQuery = hashText.includes("?") ? hashText.split("?").slice(1).join("?") : hashText.replace(/^#/, "");
+    const hashParams = new URLSearchParams(hashQuery);
+    candidates.push(hashParams.get("tgWebAppStartParam"));
+    candidates.push(hashParams.get("startapp"));
+    candidates.push(hashParams.get("ref"));
+  } catch (e) {}
+
+  for (const item of candidates) {
+    const clean = cleanReferralCode(item);
+    if (clean) return clean;
+  }
+
+  return "";
+}
+
+function extractReferralCode() {
+  const fromTelegram = cleanReferralCode(tg?.initDataUnsafe?.start_param || "");
+  const fromUrl = getUrlReferralCode();
+  const finalCode = fromTelegram || fromUrl;
+
+  if (finalCode) {
+    try { sessionStorage.setItem("delaydoge_ref", finalCode); } catch (e) {}
+    return finalCode;
+  }
+
+  try {
+    return cleanReferralCode(sessionStorage.getItem("delaydoge_ref") || "");
+  } catch (e) {
+    return "";
+  }
+}
+
 function bootTelegram() {
   tg = window.Telegram?.WebApp || null;
   if (!tg) {
@@ -235,7 +285,7 @@ function continueBoot() {
   setTimeout(() => {
     tgInitData = tg?.initData || "";
     tgUser = tg?.initDataUnsafe?.user || null;
-    startParam = tg?.initDataUnsafe?.start_param || "";
+    startParam = extractReferralCode();
 
     if (!tgUser || !tgUser.id || !tgInitData) {
       return showTelegramOnly();
@@ -617,7 +667,7 @@ function showPopup(t) {
 }
 
 function getInviteLink() {
-  return "https://t.me/DelayDogeGameBot?start=" + encodeURIComponent(userId || "delaydoge");
+  return "https://t.me/DelayDogeGameBot?startapp=" + encodeURIComponent(userId || "delaydoge");
 }
 
 async function copyInvite() {
