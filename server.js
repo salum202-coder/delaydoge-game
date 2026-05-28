@@ -291,7 +291,7 @@ async function getPlayer(initData, options = {}) {
 
   let player = await db.collection("users").findOne({ userId });
 
-  const referralCode = options.referralCode || verified.startParam || "";
+  const referralCode = verified.startParam || options.referralCode || "";
   await applyReferralIfNeeded(player, referralCode);
 
   player = await db.collection("users").findOne({ userId });
