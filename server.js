@@ -1,5 +1,8 @@
+require("dotenv").config();
+
 const express = require("express");
 const path = require("path");
+const crypto = require("crypto");
 const { MongoClient } = require("mongodb");
 
 const app = express();
@@ -35,9 +38,14 @@ app.use(express.static(path.join(__dirname)));
 
 const PORT = process.env.PORT || 10000;
 const MONGO_URI = process.env.MONGO_URI;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 const MAX_ENERGY = 100;
 const ENERGY_REGEN_MS = 5000;
+const MAX_INITDATA_AGE_SECONDS = 7 * 24 * 60 * 60;
+
+const MIN_TAP_INTERVAL_MS = 140;
+const MAX_COMBO = 5;
 
 let db;
 
@@ -61,13 +69,49 @@ function getRank(xp) {
   return "Rookie";
 }
 
-function getTelegramUser(initData) {
-  if (!initData) return null;
+function timingSafeEqualHex(a, b) {
+  try {
+    const aBuffer = Buffer.from(a, "hex");
+    const bBuffer = Buffer.from(b, "hex");
+    if (aBuffer.length !== bBuffer.length) return false;
+    return crypto.timingSafeEqual(aBuffer, bBuffer);
+  } catch {
+    return false;
+  }
+}
+
+function verifyTelegramInitData(initData) {
+  if (!initData || typeof initData !== "string") return null;
+  if (!TELEGRAM_BOT_TOKEN) return null;
 
   const params = new URLSearchParams(initData);
+  const hash = params.get("hash");
+  const authDate = safeNumber(params.get("auth_date"), 0);
   const rawUser = params.get("user");
 
-  if (!rawUser) return null;
+  if (!hash || !authDate || !rawUser) return null;
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (nowSeconds - authDate > MAX_INITDATA_AGE_SECONDS) return null;
+
+  params.delete("hash");
+
+  const dataCheckString = Array.from(params.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
+
+  const secretKey = crypto
+    .createHmac("sha256", "WebAppData")
+    .update(TELEGRAM_BOT_TOKEN)
+    .digest();
+
+  const calculatedHash = crypto
+    .createHmac("sha256", secretKey)
+    .update(dataCheckString)
+    .digest("hex");
+
+  if (!timingSafeEqualHex(calculatedHash, hash)) return null;
 
   try {
     const user = JSON.parse(rawUser);
@@ -84,13 +128,7 @@ function applyEnergyRegen(player) {
   let energy = safeNumber(player.energy, MAX_ENERGY);
   let lastEnergyAt = safeNumber(player.lastEnergyAt, now);
 
-  // مؤقتًا: أي حساب قديم طاقته صفر نرجعها 100
-  if (energy <= 0) {
-    return {
-      energy: MAX_ENERGY,
-      lastEnergyAt: now
-    };
-  }
+  energy = Math.max(0, Math.min(MAX_ENERGY, energy));
 
   if (energy >= MAX_ENERGY) {
     return {
@@ -123,7 +161,7 @@ function applyEnergyRegen(player) {
 /* ================= PLAYER ================= */
 
 async function getPlayer(initData) {
-  const tg = getTelegramUser(initData);
+  const tg = verifyTelegramInitData(initData);
 
   if (!tg) return null;
 
@@ -146,6 +184,15 @@ async function getPlayer(initData) {
         lastSyncAt: 0,
         lastEnergyAt: Date.now(),
         suspicious: 0,
+
+        dailyStreak: 0,
+        lastDailyRewardAt: 0,
+
+        inviteCode: userId,
+        invitedBy: "",
+        referrals: 0,
+        referralPoints: 0,
+
         createdAt: now
       },
       $set: {
@@ -189,6 +236,7 @@ app.get("/health", (req, res) => {
     status: "online",
     app: "DelayDoge API",
     energy: "enabled",
+    telegramAuth: "verified",
     time: new Date()
   });
 });
@@ -237,6 +285,42 @@ app.post("/tap", async (req, res) => {
     let taps = safeNumber(player.taps, 0);
     let combo = safeNumber(player.combo, 1);
     let lastTapAt = safeNumber(player.lastTapAt, 0);
+    let suspicious = safeNumber(player.suspicious, 0);
+
+    const now = Date.now();
+    const gap = lastTapAt ? now - lastTapAt : 9999;
+
+    if (gap < MIN_TAP_INTERVAL_MS) {
+      suspicious += 1;
+
+      await db.collection("users").updateOne(
+        { userId: player.userId },
+        {
+          $set: {
+            suspicious,
+            lastSyncAt: now,
+            updatedAt: new Date()
+          }
+        }
+      );
+
+      return res.json({
+        points,
+        xp,
+        energy,
+        maxEnergy: MAX_ENERGY,
+        taps,
+        combo,
+        level: calculateLevel(xp),
+        rank: getRank(xp),
+        gained: {
+          points: 0,
+          xp: 0,
+          taps: 0
+        },
+        message: "Too fast. Slow down."
+      });
+    }
 
     if (energy <= 0) {
       return res.json({
@@ -257,11 +341,8 @@ app.post("/tap", async (req, res) => {
       });
     }
 
-    const now = Date.now();
-    const gap = lastTapAt ? now - lastTapAt : 9999;
-
     if (gap < 800) {
-      combo = Math.min(combo + 1, 5);
+      combo = Math.min(combo + 1, MAX_COMBO);
     } else {
       combo = 1;
     }
@@ -273,7 +354,6 @@ app.post("/tap", async (req, res) => {
     xp += xpGain;
     energy = Math.max(0, energy - 1);
     taps += 1;
-    lastTapAt = now;
 
     const level = calculateLevel(xp);
     const rank = getRank(xp);
@@ -288,8 +368,10 @@ app.post("/tap", async (req, res) => {
           maxEnergy: MAX_ENERGY,
           taps,
           combo,
-          lastTapAt,
+          lastTapAt: now,
           lastSyncAt: now,
+          lastEnergyAt: energy < MAX_ENERGY ? now : player.lastEnergyAt,
+          suspicious,
           level,
           rank,
           updatedAt: new Date()
@@ -327,12 +409,19 @@ async function start() {
     throw new Error("Missing MONGO_URI");
   }
 
+  if (!TELEGRAM_BOT_TOKEN) {
+    throw new Error("Missing TELEGRAM_BOT_TOKEN");
+  }
+
   const client = new MongoClient(MONGO_URI);
   await client.connect();
 
   db = client.db("delaydoge");
 
   await db.collection("users").createIndex({ userId: 1 }, { unique: true });
+  await db.collection("users").createIndex({ telegramId: 1 });
+  await db.collection("users").createIndex({ points: -1 });
+  await db.collection("users").createIndex({ xp: -1 });
 
   console.log("✅ MongoDB Connected");
 
