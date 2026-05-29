@@ -273,7 +273,12 @@ function publicPlayer(player) {
 async function applyReferralIfNeeded(player, referralCode) {
   const cleanCode = sanitizeReferralCode(referralCode);
   if (!cleanCode || player.invitedBy || cleanCode === player.userId) return;
-  const referrer = await db.collection("users").findOne({ $or: [{ inviteCode: cleanCode }, { userId: cleanCode }] });
+  const referrer = await db.collection("users").findOne({
+    $or: [
+      { inviteCode: cleanCode },
+      { userId: cleanCode }
+    ]
+  });
   if (!referrer || referrer.userId === player.userId) return;
   const setResult = await db.collection("users").updateOne(
     { userId: player.userId, $or: [{ invitedBy: "" }, { invitedBy: { $exists: false } }] },
@@ -376,7 +381,7 @@ async function getBundle(player) {
 }
 
 app.get("/health", (req, res) => {
-  res.json({ success: true, status: "online", app: "DelayDoge API", version: "V19 Game Expansion", time: new Date() });
+  res.json({ success: true, status: "online", app: "DelayDoge API", version: "V19.4 Smooth Tap", time: new Date() });
 });
 
 app.post("/auth", async (req, res) => {
@@ -448,6 +453,159 @@ app.post("/tap", async (req, res) => {
     res.json({ ...bundle.player, tasks: bundle.tasks, game: bundle.game, gained: { points: pointsGain, xp: xpGain, taps: 1 } });
   } catch (e) {
     console.error("TAP ERROR:", e);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+app.post("/tap-batch", async (req, res) => {
+  try {
+    const player = await getPlayer(req.body.initData);
+
+    if (!player) {
+      return res.status(403).json({ error: "Invalid Telegram data" });
+    }
+
+    const requestedTaps = Math.max(1, Math.min(12, Math.floor(safeNumber(req.body.taps, 1))));
+
+    let points = safeNumber(player.points, 0);
+    let xp = safeNumber(player.xp, 0);
+    let energy = safeNumber(player.energy, getMaxEnergy(player));
+    let taps = safeNumber(player.taps, 0);
+    let combo = safeNumber(player.combo, 1);
+    let lastTapAt = safeNumber(player.lastTapAt, 0);
+    let suspicious = safeNumber(player.suspicious, 0);
+
+    const now = Date.now();
+    const maxEnergy = getMaxEnergy(player);
+    const maxCombo = getMaxCombo(player);
+    const tapPower = getTapPower(player);
+
+    if (energy <= 0) {
+      const bundle = await getBundle({ userId: player.userId });
+      return res.json({
+        ...bundle.player,
+        tasks: bundle.tasks,
+        game: bundle.game,
+        gained: { points: 0, xp: 0, taps: 0 },
+        acceptedTaps: 0,
+        rejectedTaps: requestedTaps,
+        message: "Energy empty. Wait for recharge."
+      });
+    }
+
+    let allowedByTime = requestedTaps;
+
+    if (lastTapAt) {
+      const elapsed = Math.max(0, now - lastTapAt);
+
+      if (elapsed < MIN_TAP_INTERVAL_MS) {
+        allowedByTime = 0;
+      } else {
+        allowedByTime = Math.max(1, Math.floor(elapsed / MIN_TAP_INTERVAL_MS));
+      }
+    }
+
+    const allowedTaps = Math.max(0, Math.min(requestedTaps, allowedByTime, energy));
+
+    if (allowedTaps <= 0) {
+      suspicious += 1;
+
+      await db.collection("users").updateOne(
+        { userId: player.userId },
+        { $set: { suspicious, lastSyncAt: now, updatedAt: new Date() } }
+      );
+
+      const bundle = await getBundle({ userId: player.userId });
+      return res.json({
+        ...bundle.player,
+        tasks: bundle.tasks,
+        game: bundle.game,
+        gained: { points: 0, xp: 0, taps: 0 },
+        acceptedTaps: 0,
+        rejectedTaps: requestedTaps,
+        message: "Saving taps..."
+      });
+    }
+
+    let totalPointsGain = 0;
+    let totalXpGain = 0;
+
+    let simulatedLastTapAt = lastTapAt || (now - MIN_TAP_INTERVAL_MS * allowedTaps);
+
+    for (let i = 0; i < allowedTaps; i += 1) {
+      const simulatedTapAt = Math.min(now, simulatedLastTapAt + MIN_TAP_INTERVAL_MS);
+      const gap = simulatedLastTapAt ? simulatedTapAt - simulatedLastTapAt : 9999;
+
+      if (gap < 800) {
+        combo = Math.min(combo + 1, maxCombo);
+      } else {
+        combo = 1;
+      }
+
+      const pointsGain = combo * tapPower;
+      const xpGain = combo * 2 + tapPower;
+
+      totalPointsGain += pointsGain;
+      totalXpGain += xpGain;
+      simulatedLastTapAt = simulatedTapAt;
+    }
+
+    const day = todayKey();
+    const oldTodayKey = player.todayKey || day;
+    const oldTodayTaps = oldTodayKey === day ? safeNumber(player.todayTaps, 0) : 0;
+    const oldTodayPoints = oldTodayKey === day ? safeNumber(player.todayPointsEarned, 0) : 0;
+
+    points += totalPointsGain;
+    xp += totalXpGain;
+    energy = Math.max(0, energy - allowedTaps);
+    taps += allowedTaps;
+
+    const todayTaps = oldTodayTaps + allowedTaps;
+    const todayPointsEarned = oldTodayPoints + totalPointsGain;
+
+    const level = calculateLevel(xp);
+    const rank = getRank(xp);
+
+    await db.collection("users").updateOne(
+      { userId: player.userId },
+      {
+        $set: {
+          points,
+          xp,
+          energy,
+          maxEnergy,
+          taps,
+          combo,
+          lastTapAt: now,
+          lastSyncAt: now,
+          lastEnergyAt: energy < maxEnergy ? now : player.lastEnergyAt,
+          suspicious,
+          level,
+          rank,
+          todayKey: day,
+          todayTaps,
+          todayPointsEarned,
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    const bundle = await getBundle({ userId: player.userId });
+
+    res.json({
+      ...bundle.player,
+      tasks: bundle.tasks,
+      game: bundle.game,
+      gained: { points: totalPointsGain, xp: totalXpGain, taps: allowedTaps },
+      acceptedTaps: allowedTaps,
+      rejectedTaps: Math.max(0, requestedTaps - allowedTaps),
+      message: allowedTaps > 1
+        ? `Saved ${allowedTaps} taps • +${totalPointsGain} points`
+        : `Saved +${totalPointsGain} points`
+    });
+  } catch (e) {
+    console.error("TAP BATCH ERROR:", e);
     res.status(500).json({ error: "Server error" });
   }
 });
