@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V19.3 Character Motion</title>
+<title>DelayDoge V19.4 Smooth Tap</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
@@ -62,6 +62,20 @@ body.page-home{--page-bg:url("assets/backgrounds/bg_home_main.jpg")}body.page-ta
 @keyframes coinBurstV193{0%{opacity:1;transform:translate(0,0) scale(1) rotate(0deg)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.25) rotate(260deg)}}
 .status{transition:box-shadow .2s ease,border-color .2s ease}.status.saved{border-color:rgba(53,208,127,.55);box-shadow:0 0 22px rgba(53,208,127,.16)}
 
+
+/* ===== V19.4 Smooth Tap Layer ===== */
+.pending-chip{
+  position:absolute;right:18px;top:18px;z-index:8;
+  background:linear-gradient(135deg,rgba(247,200,67,.98),rgba(240,159,37,.98));
+  color:#07101f;border-radius:999px;padding:8px 12px;font-weight:900;font-size:13px;
+  box-shadow:0 10px 22px rgba(0,0,0,.25),0 0 18px rgba(247,200,67,.25);
+  opacity:0;transform:translateY(-8px) scale(.92);transition:.18s ease;
+  pointer-events:none;
+}
+.pending-chip.show{opacity:1;transform:translateY(0) scale(1)}
+.status.saving{border-color:rgba(247,200,67,.50);box-shadow:0 0 22px rgba(247,200,67,.15)}
+.status.saved{border-color:rgba(53,208,127,.55);box-shadow:0 0 22px rgba(53,208,127,.16)}
+
 @media(max-width:380px){.mascot{width:202px;height:202px}.coins{font-size:40px}.gang-img{height:98px}.nav button{font-size:10px}}
 </style>
 </head>
@@ -72,11 +86,11 @@ body.page-home{--page-bg:url("assets/backgrounds/bg_home_main.jpg")}body.page-ta
   <div class="header"><div class="brand">🐶 DelayDoge</div><div class="rank" id="rank">Rookie</div></div>
   <div id="homePage">
     <div class="card"><div class="label">Your Delay Points</div><div class="coins" id="coins">0</div><div class="sub">Stage, Spin, Boxes, and Upgrades are now live.</div></div>
-    <div class="game-card" id="gameCard">
+    <div class="game-card" id="gameCard"><div class="pending-chip" id="pendingChip">+0 pending</div>
       <div class="mascot" onclick="tapDeliver(event)" id="mascot"><img src="assets/characters/delaydoge_main_home.png" id="mainDoge" alt="DelayDoge" onerror="this.onerror=null;this.src='assets/characters/delaydoge-official.png';"></div>
       <div class="tap-text">TAP DELAYDOGE</div><div class="combo" id="comboText">Combo: x1</div><div class="status" id="status">Loading player data...</div>
       <div class="energy-top"><span>Energy</span><span id="energyText">100/100</span></div><div class="energy-bar"><div class="energy-fill" id="energyFill"></div></div>
-      <div class="stats"><div class="box"><div class="small">XP</div><div class="num" id="xp">0</div></div><div class="box"><div class="small">Taps</div><div class="num" id="taps">0</div></div><div class="box"><div class="small">Boxes</div><div class="num" id="boxes">0</div></div></div><div class="stats"><div class="box"><div class="small">Level</div><div class="num" id="level">1</div></div><div class="box"><div class="small">Energy</div><div class="num" id="energyMini">Live</div></div><div class="box"><div class="small">Mode</div><div class="num">V19.3</div></div></div>
+      <div class="stats"><div class="box"><div class="small">XP</div><div class="num" id="xp">0</div></div><div class="box"><div class="small">Taps</div><div class="num" id="taps">0</div></div><div class="box"><div class="small">Boxes</div><div class="num" id="boxes">0</div></div></div><div class="stats"><div class="box"><div class="small">Level</div><div class="num" id="level">1</div></div><div class="box"><div class="small">Energy</div><div class="num" id="energyMini">Live</div></div><div class="box"><div class="small">Mode</div><div class="num">V19.4</div></div></div>
     </div>
     <div class="section"><h3>🔥 Live Feed</h3><div class="feed" id="feed">Connecting to server...</div></div>
   </div>
@@ -105,14 +119,130 @@ function continueBoot(){try{tg.ready();tg.expand()}catch(e){}setTimeout(()=>{tgI
 function showTelegramOnly(){document.getElementById("app").style.display="none";document.getElementById("nav").style.display="none";document.getElementById("telegramOnly").style.display="flex"}
 async function api(path,body){const res=await fetch(API_BASE+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body||{})});const data=await res.json().catch(()=>({}));if(!res.ok&&!data.error)data.error="Request failed";return data}
 async function apiGet(path){const res=await fetch(API_BASE+path,{method:"GET"});const data=await res.json().catch(()=>({}));if(!res.ok&&!data.error)data.error="Request failed";return data}
-async function loginUser(){try{const result=await api("/auth",{initData:tgInitData,referralCode:startParam});if(result.error||!result.player){showPopup(result.error||"Login failed");setFeed("Login failed. Please reopen from Telegram.");return}applyPayload(result);isReady=true;setFeed("V19.3 motion loaded ✅<br>Characters, taps, spin, boxes, and cards now feel alive.");document.getElementById("status").innerText="Ready. Tap DelayDoge 🐶📦";loadLeaderboard()}catch(e){setFeed("Server sync issue. Try again.");showPopup("Sync issue")}}
+async function loginUser(){try{const result=await api("/auth",{initData:tgInitData,referralCode:startParam});if(result.error||!result.player){showPopup(result.error||"Login failed");setFeed("Login failed. Please reopen from Telegram.");return}applyPayload(result);isReady=true;setFeed("V19.4 Smooth Tap loaded ✅<br>Tap fast. DelayDoge saves cleanly in the background.");document.getElementById("status").innerText="Ready. Tap DelayDoge 🐶📦";loadLeaderboard()}catch(e){setFeed("Server sync issue. Try again.");showPopup("Sync issue")}}
 function applyPayload(result){const topLevelPlayer=(result&&typeof result.points!=="undefined"&&typeof result.energy!=="undefined")?result:null;if(result.player)applyPlayer(result.player);else if(topLevelPlayer)applyPlayer(topLevelPlayer);if(result.tasks)currentTasks=result.tasks;if(result.game)gameState=result.game;renderAll()}
 function applyPlayer(p){coins=Number(p.points??0);xp=Number(p.xp??0);taps=Number(p.taps??0);energy=Number(p.energy??100);maxEnergy=Number(p.maxEnergy??100);level=Number(p.level??calculateLevel(xp));combo=Number(p.combo??1);dailyStreak=Number(p.dailyStreak??0);canClaimDaily=Boolean(p.canClaimDaily);nextDailyAt=Number(p.nextDailyAt??0);referrals=Number(p.referrals??0);referralPoints=Number(p.referralPoints??0);gameState=p.game||gameState||{}}
 function calculateLevel(value){return Math.floor(Math.sqrt(Number(value||0)/100))+1}
 function getRank(){if(xp>=10000)return"Delay King";if(xp>=5000)return"Delivery Legend";if(xp>=2500)return"Customs Boss";if(xp>=1000)return"Lost Parcel";if(xp>=300)return"Delayed";return"Rookie"}
 function renderAll(){refresh();renderDailyInfo();renderTasks();renderGang();renderStages();renderSpin();renderBox();renderUpgrades()}
 function refresh(){document.getElementById("coins").innerText=coins;document.getElementById("xp").innerText=xp;document.getElementById("boxes").innerText=gameState.boxes??0;document.getElementById("level").innerText=level;document.getElementById("energyText").innerText=energy+"/"+maxEnergy;document.getElementById("energyFill").style.width=Math.max(0,Math.min(100,(energy/maxEnergy)*100))+"%";document.getElementById("rank").innerText=getRank();const comboText=document.getElementById("comboText");const tapPower=gameState.tapPower||1;comboText.innerText=combo>=4?"🔥 FIRE COMBO x"+combo+" • Tap Power +"+tapPower:"Combo: x"+combo+" • Tap Power +"+tapPower;comboText.classList.toggle("fire",combo>=4);if(document.getElementById("taps"))document.getElementById("taps").innerText=taps;if(document.getElementById("energyMini"))document.getElementById("energyMini").innerText=energy+"/"+maxEnergy;if(userId)document.getElementById("inviteLink").innerText=getInviteLink();document.getElementById("referralsCount").innerText=referrals;document.getElementById("referralPoints").innerText=referralPoints}
-async function tapDeliver(e){if(!isReady||syncInProgress){showPopup("Saving previous tap...");return}if(energy<=0){document.getElementById("status").innerText="Energy empty. Wait for recharge ⚡";return}syncInProgress=true;pulseMascot();createFloat(e,"+");createCoinBurst(e);if(navigator.vibrate)navigator.vibrate(18);try{const r=await api("/tap",{initData:tgInitData,taps:1});if(r.error){showPopup(r.error);document.getElementById("status").innerText=r.error}else{applyPayload(r);const gained=r.gained?.points??0;const statusBox=document.getElementById("status");statusBox.innerText=r.message||(gained>0?`Saved +${gained} points ✅ Energy ${energy}/${maxEnergy}`:`Saved ✅ Energy ${energy}/${maxEnergy}`);statusBox.classList.add("saved");setTimeout(()=>statusBox.classList.remove("saved"),450);createFloat(e,"+"+gained)}}catch(err){showPopup("Sync issue");document.getElementById("status").innerText="Connection issue. Try again."}syncInProgress=false}
+let pendingTaps=0;
+let tapFlushTimer=null;
+let tapFlushInProgress=false;
+let optimisticPoints=0;
+let optimisticEnergy=0;
+
+function updatePendingChip(){
+  const chip=document.getElementById("pendingChip");
+  if(!chip)return;
+  if(pendingTaps>0){
+    chip.innerText="+"+pendingTaps+" pending";
+    chip.classList.add("show");
+  }else{
+    chip.classList.remove("show");
+  }
+}
+
+function optimisticTapUI(){
+  const tapPower=gameState.tapPower||1;
+  const visualGain=Math.max(1,tapPower);
+  optimisticPoints+=visualGain;
+  optimisticEnergy+=1;
+
+  const visibleCoins=coins+optimisticPoints;
+  const visibleEnergy=Math.max(0,energy-optimisticEnergy);
+
+  document.getElementById("coins").innerText=visibleCoins;
+  document.getElementById("energyText").innerText=visibleEnergy+"/"+maxEnergy;
+  document.getElementById("energyFill").style.width=Math.max(0,Math.min(100,(visibleEnergy/maxEnergy)*100))+"%";
+  if(document.getElementById("energyMini"))document.getElementById("energyMini").innerText=visibleEnergy+"/"+maxEnergy;
+}
+
+function scheduleTapFlush(){
+  if(tapFlushTimer)return;
+  tapFlushTimer=setTimeout(flushTaps,620);
+}
+
+async function flushTaps(){
+  tapFlushTimer=null;
+  if(!isReady||tapFlushInProgress||pendingTaps<=0)return;
+
+  tapFlushInProgress=true;
+
+  const sendTaps=Math.min(12,pendingTaps);
+  pendingTaps-=sendTaps;
+  updatePendingChip();
+
+  const statusBox=document.getElementById("status");
+  statusBox.classList.add("saving");
+  statusBox.innerText=sendTaps>1?"Saving "+sendTaps+" taps...":"Saving tap...";
+
+  try{
+    const r=await api("/tap-batch",{initData:tgInitData,taps:sendTaps});
+
+    if(r.error){
+      showPopup(r.error);
+      statusBox.innerText=r.error;
+    }else{
+      optimisticPoints=0;
+      optimisticEnergy=0;
+      applyPayload(r);
+
+      const gained=r.gained?.points??0;
+      const accepted=r.acceptedTaps??r.gained?.taps??sendTaps;
+
+      statusBox.classList.remove("saving");
+      statusBox.classList.add("saved");
+      statusBox.innerText=accepted>1
+        ? `Saved ${accepted} taps ✅ +${gained} pts • Energy ${energy}/${maxEnergy}`
+        : `Saved +${gained} points ✅ Energy ${energy}/${maxEnergy}`;
+
+      setTimeout(()=>statusBox.classList.remove("saved"),520);
+    }
+  }catch(err){
+    statusBox.classList.remove("saving");
+    statusBox.innerText="Connection issue. Retrying soon.";
+    pendingTaps+=sendTaps;
+    updatePendingChip();
+  }
+
+  tapFlushInProgress=false;
+
+  if(pendingTaps>0){
+    scheduleTapFlush();
+  }
+}
+
+async function tapDeliver(e){
+  if(!isReady){
+    showPopup("Loading...");
+    return;
+  }
+
+  const availableEnergy=Math.max(0,energy-optimisticEnergy);
+
+  if(availableEnergy<=0){
+    document.getElementById("status").innerText="Energy empty. Wait for recharge ⚡";
+    return;
+  }
+
+  pendingTaps+=1;
+  pulseMascot();
+  createFloat(e,"+");
+  createCoinBurst(e);
+  optimisticTapUI();
+  updatePendingChip();
+
+  if(navigator.vibrate)navigator.vibrate(12);
+
+  const statusBox=document.getElementById("status");
+  statusBox.innerText=pendingTaps>1
+    ? `${pendingTaps} taps queued…`
+    : "Tap saved locally…";
+
+  scheduleTapFlush();
+}
+
 async function claimDailyReward(){if(!isReady)return showPopup("Loading...");const btn=document.getElementById("dailyBtn");btn.disabled=true;try{const r=await api("/daily",{initData:tgInitData});if(r.error)showPopup(r.error);else if(r.ok){applyPayload(r);showPopup(`Daily +${r.reward.points} 🐶`);setFeed(`${r.message}<br>+${r.reward.points} points, +${r.reward.energy} energy`)}else{applyPayload(r);showPopup(r.message||"Already claimed")}}catch(e){showPopup("Daily failed")}btn.disabled=false}
 async function loadTasks(){if(!isReady)return;try{const r=await api("/tasks",{initData:tgInitData});if(r.error)return showPopup(r.error);applyPayload(r);showPopup("Missions updated")}catch{showPopup("Tasks failed")}}
 async function claimTask(taskId){if(!isReady)return;try{const r=await api("/claim-task",{initData:tgInitData,taskId});if(r.error)return showPopup(r.error);applyPayload(r);showPopup(r.message||"Task checked")}catch{showPopup("Claim failed")}}
