@@ -273,7 +273,7 @@ function publicPlayer(player) {
 async function applyReferralIfNeeded(player, referralCode) {
   const cleanCode = sanitizeReferralCode(referralCode);
   if (!cleanCode || player.invitedBy || cleanCode === player.userId) return;
-  const referrer = await db.collection("users").findOne({ inviteCode: cleanCode });
+  const referrer = await db.collection("users").findOne({ $or: [{ inviteCode: cleanCode }, { userId: cleanCode }] });
   if (!referrer || referrer.userId === player.userId) return;
   const setResult = await db.collection("users").updateOne(
     { userId: player.userId, $or: [{ invitedBy: "" }, { invitedBy: { $exists: false } }] },
