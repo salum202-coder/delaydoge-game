@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V20 Premium Home UI</title>
+<title>DelayDoge V20.1 Premium Home UI Fix</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
@@ -77,6 +77,363 @@ body.page-home{--page-bg:url("assets/backgrounds/bg_home_main.jpg")}body.page-ta
 .status.saved{border-color:rgba(53,208,127,.55);box-shadow:0 0 22px rgba(53,208,127,.16)}
 
 @media(max-width:380px){.mascot{width:202px;height:202px}.coins{font-size:40px}.gang-img{height:98px}.nav button{font-size:10px}}
+
+/* ===== V20.1 Premium Home UI Fix ===== */
+body.page-home .header{display:none}
+body.page-home{--page-bg:url("assets/backgrounds/bg_home_main.jpg")}
+
+.premium-home{
+  position:relative;
+  min-height:calc(100vh - 28px);
+  padding:12px 0 120px;
+  overflow:hidden;
+}
+.premium-home::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background:
+    radial-gradient(circle at 50% 34%,rgba(247,200,67,.24),transparent 28%),
+    radial-gradient(circle at 50% 74%,rgba(124,60,255,.18),transparent 27%);
+  pointer-events:none;
+}
+
+.premium-top{
+  display:grid;
+  grid-template-columns:1fr 1fr .75fr 52px;
+  gap:7px;
+  margin-bottom:10px;
+  position:relative;
+  z-index:6;
+}
+.resource-pill,.settings-btn{
+  min-height:52px;
+  background:linear-gradient(180deg,rgba(37,55,111,.96),rgba(9,17,42,.96));
+  border:2px solid rgba(247,200,67,.60);
+  box-shadow:0 10px 22px rgba(0,0,0,.32),inset 0 0 0 1px rgba(255,255,255,.08);
+  border-radius:18px;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:7px;
+}
+.resource-pill span{
+  display:block;
+  font-size:10px;
+  color:#ffdc75;
+  font-weight:900;
+  line-height:1;
+}
+.resource-pill b{
+  display:block;
+  font-size:15px;
+  font-weight:900;
+  line-height:1.25;
+  text-shadow:0 2px 0 rgba(0,0,0,.24);
+}
+.resource-pill button{
+  margin-left:auto;
+  border:0;
+  width:23px;
+  height:23px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#4ee777,#1ba34d);
+  color:#fff;
+  font-size:17px;
+  font-weight:900;
+  box-shadow:0 3px 0 rgba(0,0,0,.24);
+}
+.res-icon{
+  width:31px;
+  height:31px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#ffd85a,#f49d22);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.25),0 4px 8px rgba(0,0,0,.24);
+  flex-shrink:0;
+  font-size:18px;
+}
+.settings-btn{
+  justify-content:center;
+  font-size:25px;
+  padding:0;
+  cursor:pointer;
+}
+
+.premium-logo{
+  text-align:center;
+  margin:5px 0 8px;
+  position:relative;
+  z-index:5;
+}
+.premium-title{
+  display:inline-block;
+  font-size:42px;
+  font-weight:1000;
+  line-height:.92;
+  color:#ffd34c;
+  text-shadow:0 4px 0 #782aae,0 7px 0 #3b1468,0 12px 20px rgba(0,0,0,.5),0 0 16px rgba(247,200,67,.4);
+  letter-spacing:-1.5px;
+}
+.premium-subtitle{
+  display:inline-block;
+  margin-top:5px;
+  background:linear-gradient(180deg,#191f49,#090f24);
+  border:1px solid rgba(247,200,67,.75);
+  border-radius:999px;
+  color:#ffe27a;
+  font-weight:900;
+  font-size:12px;
+  padding:4px 16px;
+  box-shadow:0 5px 12px rgba(0,0,0,.28);
+}
+
+.season-card{
+  background:linear-gradient(180deg,rgba(107,45,185,.96),rgba(37,31,104,.96));
+  border:2px solid rgba(255,216,98,.74);
+  border-radius:23px;
+  padding:10px 12px;
+  margin:8px 4px 8px;
+  box-shadow:0 12px 26px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.10);
+  position:relative;
+  z-index:5;
+  color:white;
+}
+.season-left{
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+.season-badge{
+  width:43px;
+  height:43px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#ffdd56,#9e48ff);
+  font-size:25px;
+  border:2px solid rgba(255,255,255,.25);
+}
+.season-left b{
+  display:block;
+  text-transform:uppercase;
+  font-size:13px;
+  font-weight:1000;
+}
+.season-left span{
+  display:block;
+  color:#fff;
+  font-weight:900;
+  font-size:17px;
+  margin-top:3px;
+}
+.season-progress{
+  height:13px;
+  background:#15193a;
+  border-radius:999px;
+  margin-top:8px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.25);
+}
+.season-progress div{
+  height:100%;
+  width:0;
+  background:linear-gradient(90deg,#34d86e,#c9f047,#ffd34c);
+  box-shadow:0 0 16px rgba(52,216,110,.4);
+}
+.season-time{
+  display:inline-block;
+  margin:7px auto 0;
+  left:50%;
+  position:relative;
+  transform:translateX(-50%);
+  background:linear-gradient(180deg,#2b75e3,#173e90);
+  border:1px solid rgba(255,255,255,.35);
+  border-radius:999px;
+  padding:4px 14px;
+  font-weight:900;
+  font-size:12px;
+  color:#fff;
+}
+
+.premium-stage{
+  position:relative;
+  min-height:455px;
+  margin-top:0;
+  display:grid;
+  grid-template-columns:88px 1fr 88px;
+  gap:8px;
+  align-items:center;
+}
+.side-events{
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+  z-index:7;
+}
+.event-btn{
+  min-height:86px;
+  border:2px solid rgba(247,200,67,.72);
+  border-radius:22px;
+  background:linear-gradient(180deg,rgba(49,58,128,.95),rgba(14,23,61,.96));
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  padding:6px 4px;
+  box-shadow:0 10px 20px rgba(0,0,0,.32),inset 0 0 0 1px rgba(255,255,255,.08);
+  position:relative;
+  overflow:hidden;
+  cursor:pointer;
+}
+.event-btn::before{
+  content:"";
+  position:absolute;
+  inset:-40%;
+  background:linear-gradient(120deg,transparent,rgba(255,255,255,.14),transparent);
+  transform:translateX(-120%) rotate(18deg);
+  animation:eventShine 4s ease-in-out infinite;
+}
+@keyframes eventShine{
+  0%,65%{transform:translateX(-120%) rotate(18deg)}
+  100%{transform:translateX(120%) rotate(18deg)}
+}
+.event-btn span{
+  font-size:32px;
+  filter:drop-shadow(0 5px 8px rgba(0,0,0,.35));
+}
+.event-btn b{
+  font-size:13px;
+  line-height:1.05;
+  font-weight:1000;
+  text-shadow:0 2px 0 rgba(0,0,0,.35);
+}
+.event-btn small{
+  background:linear-gradient(180deg,#26c657,#10853d);
+  border:1px solid rgba(255,255,255,.25);
+  padding:2px 7px;
+  border-radius:999px;
+  font-weight:900;
+  font-size:10px;
+  color:#fff;
+}
+
+.hero-zone{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:430px;
+  z-index:5;
+}
+.hero-glow{
+  position:absolute;
+  width:250px;
+  height:250px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(247,200,67,.34),rgba(124,60,255,.15) 54%,transparent 72%);
+  filter:blur(8px);
+  animation:heroGlow 3s ease-in-out infinite alternate;
+}
+@keyframes heroGlow{
+  from{transform:scale(.92);opacity:.68}
+  to{transform:scale(1.08);opacity:1}
+}
+.premium-hero{
+  width:255px;
+  max-width:120%;
+  position:relative;
+  z-index:2;
+  filter:drop-shadow(0 18px 24px rgba(0,0,0,.55));
+  animation:premiumHeroIdle 2.8s ease-in-out infinite;
+  transform-origin:center bottom;
+  border-radius:32px;
+}
+@keyframes premiumHeroIdle{
+  0%,100%{transform:translateY(0) rotate(-.4deg)}
+  50%{transform:translateY(-9px) rotate(.6deg)}
+}
+.hero-platform{
+  position:absolute;
+  bottom:30px;
+  width:210px;
+  height:58px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:34px;
+  color:#ffd34c;
+  background:radial-gradient(circle,rgba(247,200,67,.28),rgba(105,55,193,.28) 58%,rgba(0,0,0,.12));
+  border:2px solid rgba(247,200,67,.55);
+  box-shadow:0 0 36px rgba(247,200,67,.20),inset 0 0 28px rgba(0,0,0,.22);
+}
+
+.play-btn{
+  width:86%;
+  min-height:82px;
+  margin:-6px auto 9px;
+  display:block;
+  border:0;
+  border-radius:28px;
+  color:white;
+  font-size:42px;
+  font-weight:1000;
+  letter-spacing:1px;
+  text-shadow:0 4px 0 rgba(0,0,0,.35);
+  background:linear-gradient(180deg,#73ff55,#17b52c 60%,#07891c);
+  box-shadow:0 9px 0 #075f17,0 18px 28px rgba(0,0,0,.42),0 0 22px rgba(71,255,85,.28),inset 0 0 0 4px rgba(255,255,255,.25);
+  position:relative;
+  z-index:8;
+  cursor:pointer;
+}
+.play-btn:active{
+  transform:translateY(5px);
+  box-shadow:0 4px 0 #075f17,0 12px 22px rgba(0,0,0,.35);
+}
+.premium-note{
+  text-align:center;
+  color:#eaf0ff;
+  font-size:12px;
+  line-height:1.35;
+  background:rgba(8,17,37,.55);
+  border:1px solid rgba(247,200,67,.22);
+  border-radius:999px;
+  padding:8px 12px;
+  margin:0 16px;
+}
+.tap-game-shell{padding-top:6px}
+.back-premium{
+  border:1px solid rgba(247,200,67,.35);
+  background:rgba(8,17,37,.72);
+  color:#ffe27a;
+  font-weight:900;
+  border-radius:999px;
+  padding:9px 14px;
+  margin-bottom:10px;
+}
+body.home-run .premium-home{display:none}
+body.home-run .tap-game-shell{display:block}
+
+@media(max-width:380px){
+  .premium-top{grid-template-columns:1fr 1fr 52px}
+  .level-pill{display:none}
+  .premium-title{font-size:36px}
+  .premium-stage{grid-template-columns:78px 1fr 78px;gap:6px}
+  .event-btn{min-height:78px;border-radius:18px}
+  .event-btn span{font-size:28px}
+  .event-btn b{font-size:11px}
+  .premium-hero{width:225px}
+  .play-btn{font-size:34px;min-height:72px}
+}
+
 </style>
 </head>
 <body class="page-home">
@@ -154,7 +511,7 @@ body.page-home{--page-bg:url("assets/backgrounds/bg_home_main.jpg")}body.page-ta
         <div class="mascot" onclick="tapDeliver(event)" id="mascot"><img src="assets/characters/delaydoge_main_home.png" id="mainDoge" alt="DelayDoge" onerror="this.onerror=null;this.src='assets/characters/delaydoge-official.png';"></div>
         <div class="tap-text">TAP DELAYDOGE</div><div class="combo" id="comboText">Combo: x1</div><div class="status" id="status">Loading player data...</div>
         <div class="energy-top"><span>Energy</span><span id="energyText">100/100</span></div><div class="energy-bar"><div class="energy-fill" id="energyFill"></div></div>
-        <div class="stats"><div class="box"><div class="small">XP</div><div class="num" id="xp">0</div></div><div class="box"><div class="small">Taps</div><div class="num" id="taps">0</div></div><div class="box"><div class="small">Boxes</div><div class="num" id="boxes">0</div></div></div><div class="stats"><div class="box"><div class="small">Level</div><div class="num" id="level">1</div></div><div class="box"><div class="small">Energy</div><div class="num" id="energyMini">Live</div></div><div class="box"><div class="small">Mode</div><div class="num">V20</div></div></div>
+        <div class="stats"><div class="box"><div class="small">XP</div><div class="num" id="xp">0</div></div><div class="box"><div class="small">Taps</div><div class="num" id="taps">0</div></div><div class="box"><div class="small">Boxes</div><div class="num" id="boxes">0</div></div></div><div class="stats"><div class="box"><div class="small">Level</div><div class="num" id="level">1</div></div><div class="box"><div class="small">Energy</div><div class="num" id="energyMini">Live</div></div><div class="box"><div class="small">Mode</div><div class="num">V20.1</div></div></div>
       </div>
       <div class="section"><h3>🔥 Live Feed</h3><div class="feed" id="feed">Connecting to server...</div></div>
     </div>
