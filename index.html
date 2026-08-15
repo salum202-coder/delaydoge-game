@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DelayDoge V19.4 Smooth Tap</title>
+<title>DelayDoge V20 Premium Home UI</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
@@ -85,15 +85,81 @@ body.page-home{--page-bg:url("assets/backgrounds/bg_home_main.jpg")}body.page-ta
 <div class="app" id="app">
   <div class="header"><div class="brand">🐶 DelayDoge</div><div class="rank" id="rank">Rookie</div></div>
   <div id="homePage">
-    <div class="card"><div class="label">Your Delay Points</div><div class="coins" id="coins">0</div><div class="sub">Stage, Spin, Boxes, and Upgrades are now live.</div></div>
-    <div class="game-card" id="gameCard"><div class="pending-chip" id="pendingChip">+0 pending</div>
-      <div class="mascot" onclick="tapDeliver(event)" id="mascot"><img src="assets/characters/delaydoge_main_home.png" id="mainDoge" alt="DelayDoge" onerror="this.onerror=null;this.src='assets/characters/delaydoge-official.png';"></div>
-      <div class="tap-text">TAP DELAYDOGE</div><div class="combo" id="comboText">Combo: x1</div><div class="status" id="status">Loading player data...</div>
-      <div class="energy-top"><span>Energy</span><span id="energyText">100/100</span></div><div class="energy-bar"><div class="energy-fill" id="energyFill"></div></div>
-      <div class="stats"><div class="box"><div class="small">XP</div><div class="num" id="xp">0</div></div><div class="box"><div class="small">Taps</div><div class="num" id="taps">0</div></div><div class="box"><div class="small">Boxes</div><div class="num" id="boxes">0</div></div></div><div class="stats"><div class="box"><div class="small">Level</div><div class="num" id="level">1</div></div><div class="box"><div class="small">Energy</div><div class="num" id="energyMini">Live</div></div><div class="box"><div class="small">Mode</div><div class="num">V19.4</div></div></div>
+    <div class="premium-home" id="premiumHome">
+      <div class="premium-top">
+        <div class="resource-pill">
+          <div class="res-icon">🐾</div>
+          <div><span>Coins</span><b id="premiumCoins">0</b></div>
+          <button onclick="showPage('spin')">+</button>
+        </div>
+        <div class="resource-pill">
+          <div class="res-icon">⚡</div>
+          <div><span>Energy</span><b id="premiumEnergy">100/100</b></div>
+          <button onclick="showPage('upgrades')">+</button>
+        </div>
+        <div class="resource-pill level-pill">
+          <div class="res-icon">⭐</div>
+          <div><span>Level</span><b id="premiumLevel">1</b></div>
+        </div>
+        <button class="settings-btn" onclick="showPage('more')">⚙️</button>
+      </div>
+
+      <div class="premium-logo">
+        <div class="premium-title">DelayDoge</div>
+        <div class="premium-subtitle">THE MAIN LEGEND</div>
+      </div>
+
+      <div class="season-card" onclick="showPage('stages')">
+        <div class="season-left">
+          <div class="season-badge">👑</div>
+          <div>
+            <b>Royal Delivery Season</b>
+            <span id="premiumSeasonProgress">0 / 1,000</span>
+          </div>
+        </div>
+        <div class="season-progress"><div id="premiumSeasonFill"></div></div>
+        <div class="season-time">⏱️ 1d 15h</div>
+      </div>
+
+      <div class="premium-stage">
+        <div class="side-events left-events">
+          <button class="event-btn" onclick="showPage('box')"><span>🎁</span><b>Daily Pack</b><small>12h 17m</small></button>
+          <button class="event-btn" onclick="showPage('spin')"><span>🎡</span><b>Mega Spin</b><small>2d 12h</small></button>
+          <button class="event-btn" onclick="showPage('box')"><span>❔</span><b>Mystery Box</b><small>1d 12h</small></button>
+          <button class="event-btn" onclick="showPage('leaders')"><span>🏆</span><b>Tournament</b><small>3d 15h</small></button>
+        </div>
+
+        <div class="hero-zone">
+          <div class="hero-glow"></div>
+          <img src="assets/characters/delaydoge_main_home.png" class="premium-hero" alt="DelayDoge" onerror="this.onerror=null;this.src='assets/characters/delaydoge-official.png';">
+          <div class="hero-platform">🐾</div>
+        </div>
+
+        <div class="side-events right-events">
+          <button class="event-btn" onclick="showPremiumComing('Delivery Dash')"><span>🚚</span><b>Delivery Dash</b><small>Soon</small></button>
+          <button class="event-btn" onclick="showPage('tasks')"><span>🎯</span><b>Rewards</b><small>7h 45m</small></button>
+          <button class="event-btn" onclick="showPage('invite')"><span>👥</span><b>Invite</b><small>Earn!</small></button>
+          <button class="event-btn" onclick="showPage('upgrades')"><span>💎</span><b>Boosters</b><small>Upgrade</small></button>
+        </div>
+      </div>
+
+      <button class="play-btn" onclick="startDeliveryRun()">PLAY</button>
+      <div class="premium-note" id="premiumNote">Late, but legendary. Tap to deliver greatness… eventually.</div>
     </div>
-    <div class="section"><h3>🔥 Live Feed</h3><div class="feed" id="feed">Connecting to server...</div></div>
+
+    <div class="tap-game-shell hidden" id="tapGameShell">
+      <button class="back-premium" onclick="showPremiumHome()">← Premium Home</button>
+      <div class="card"><div class="label">Your Delay Points</div><div class="coins" id="coins">0</div><div class="sub">Smooth Tap is active. Server-saved points only.</div></div>
+      <div class="game-card" id="gameCard"><div class="pending-chip" id="pendingChip">+0 pending</div>
+        <div class="mascot" onclick="tapDeliver(event)" id="mascot"><img src="assets/characters/delaydoge_main_home.png" id="mainDoge" alt="DelayDoge" onerror="this.onerror=null;this.src='assets/characters/delaydoge-official.png';"></div>
+        <div class="tap-text">TAP DELAYDOGE</div><div class="combo" id="comboText">Combo: x1</div><div class="status" id="status">Loading player data...</div>
+        <div class="energy-top"><span>Energy</span><span id="energyText">100/100</span></div><div class="energy-bar"><div class="energy-fill" id="energyFill"></div></div>
+        <div class="stats"><div class="box"><div class="small">XP</div><div class="num" id="xp">0</div></div><div class="box"><div class="small">Taps</div><div class="num" id="taps">0</div></div><div class="box"><div class="small">Boxes</div><div class="num" id="boxes">0</div></div></div><div class="stats"><div class="box"><div class="small">Level</div><div class="num" id="level">1</div></div><div class="box"><div class="small">Energy</div><div class="num" id="energyMini">Live</div></div><div class="box"><div class="small">Mode</div><div class="num">V20</div></div></div>
+      </div>
+      <div class="section"><h3>🔥 Live Feed</h3><div class="feed" id="feed">Connecting to server...</div></div>
+    </div>
   </div>
+
   <div id="tasksPage" class="hidden"><div class="section"><h3>✅ Daily Missions</h3><div class="daily-card"><h3>🎁 Daily Reward</h3><div class="feed" id="dailyInfo">Loading daily reward...</div><button class="btn full green" id="dailyBtn" onclick="claimDailyReward()">Claim Daily Reward</button></div><div id="tasksList"></div><button class="btn full dark" onclick="loadTasks()">🔄 Refresh Missions</button><button class="btn full dark" onclick="shareTelegram()">📨 Share DelayDoge</button></div></div>
   <div id="stagesPage" class="hidden"><div class="section"><h3>🗺️ Delivery Stages</h3><div class="feed" id="stageSummary">Loading stages...</div><div id="stagesList"></div></div></div>
   <div id="spinPage" class="hidden"><div class="section"><h3>🎰 Daily Spin</h3><div class="spin-card" style="text-align:center"><div class="feed" id="spinInfo">Loading spin...</div><div class="spin-wheel" id="spinWheel"></div><button class="btn full" id="spinBtn" onclick="useDailySpin()">Spin Daily Reward</button></div><button class="btn full dark" onclick="showPage('box')">🎁 Open Mystery Box</button></div></div>
@@ -119,13 +185,43 @@ function continueBoot(){try{tg.ready();tg.expand()}catch(e){}setTimeout(()=>{tgI
 function showTelegramOnly(){document.getElementById("app").style.display="none";document.getElementById("nav").style.display="none";document.getElementById("telegramOnly").style.display="flex"}
 async function api(path,body){const res=await fetch(API_BASE+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body||{})});const data=await res.json().catch(()=>({}));if(!res.ok&&!data.error)data.error="Request failed";return data}
 async function apiGet(path){const res=await fetch(API_BASE+path,{method:"GET"});const data=await res.json().catch(()=>({}));if(!res.ok&&!data.error)data.error="Request failed";return data}
-async function loginUser(){try{const result=await api("/auth",{initData:tgInitData,referralCode:startParam});if(result.error||!result.player){showPopup(result.error||"Login failed");setFeed("Login failed. Please reopen from Telegram.");return}applyPayload(result);isReady=true;setFeed("V19.4 Smooth Tap loaded ✅<br>Tap fast. DelayDoge saves cleanly in the background.");document.getElementById("status").innerText="Ready. Tap DelayDoge 🐶📦";loadLeaderboard()}catch(e){setFeed("Server sync issue. Try again.");showPopup("Sync issue")}}
+async function loginUser(){try{const result=await api("/auth",{initData:tgInitData,referralCode:startParam});if(result.error||!result.player){showPopup(result.error||"Login failed");setFeed("Login failed. Please reopen from Telegram.");return}applyPayload(result);isReady=true;setFeed("V20 Premium Home loaded ✅<br>Press PLAY to start tapping. Events and rewards are ready.");document.getElementById("status").innerText="Ready. Tap DelayDoge 🐶📦";loadLeaderboard()}catch(e){setFeed("Server sync issue. Try again.");showPopup("Sync issue")}}
 function applyPayload(result){const topLevelPlayer=(result&&typeof result.points!=="undefined"&&typeof result.energy!=="undefined")?result:null;if(result.player)applyPlayer(result.player);else if(topLevelPlayer)applyPlayer(topLevelPlayer);if(result.tasks)currentTasks=result.tasks;if(result.game)gameState=result.game;renderAll()}
 function applyPlayer(p){coins=Number(p.points??0);xp=Number(p.xp??0);taps=Number(p.taps??0);energy=Number(p.energy??100);maxEnergy=Number(p.maxEnergy??100);level=Number(p.level??calculateLevel(xp));combo=Number(p.combo??1);dailyStreak=Number(p.dailyStreak??0);canClaimDaily=Boolean(p.canClaimDaily);nextDailyAt=Number(p.nextDailyAt??0);referrals=Number(p.referrals??0);referralPoints=Number(p.referralPoints??0);gameState=p.game||gameState||{}}
 function calculateLevel(value){return Math.floor(Math.sqrt(Number(value||0)/100))+1}
 function getRank(){if(xp>=10000)return"Delay King";if(xp>=5000)return"Delivery Legend";if(xp>=2500)return"Customs Boss";if(xp>=1000)return"Lost Parcel";if(xp>=300)return"Delayed";return"Rookie"}
 function renderAll(){refresh();renderDailyInfo();renderTasks();renderGang();renderStages();renderSpin();renderBox();renderUpgrades()}
-function refresh(){document.getElementById("coins").innerText=coins;document.getElementById("xp").innerText=xp;document.getElementById("boxes").innerText=gameState.boxes??0;document.getElementById("level").innerText=level;document.getElementById("energyText").innerText=energy+"/"+maxEnergy;document.getElementById("energyFill").style.width=Math.max(0,Math.min(100,(energy/maxEnergy)*100))+"%";document.getElementById("rank").innerText=getRank();const comboText=document.getElementById("comboText");const tapPower=gameState.tapPower||1;comboText.innerText=combo>=4?"🔥 FIRE COMBO x"+combo+" • Tap Power +"+tapPower:"Combo: x"+combo+" • Tap Power +"+tapPower;comboText.classList.toggle("fire",combo>=4);if(document.getElementById("taps"))document.getElementById("taps").innerText=taps;if(document.getElementById("energyMini"))document.getElementById("energyMini").innerText=energy+"/"+maxEnergy;if(userId)document.getElementById("inviteLink").innerText=getInviteLink();document.getElementById("referralsCount").innerText=referrals;document.getElementById("referralPoints").innerText=referralPoints}
+function refresh(){
+  document.getElementById("coins").innerText=coins;
+  document.getElementById("xp").innerText=xp;
+  document.getElementById("boxes").innerText=gameState.boxes??0;
+  document.getElementById("level").innerText=level;
+  document.getElementById("energyText").innerText=energy+"/"+maxEnergy;
+  document.getElementById("energyFill").style.width=Math.max(0,Math.min(100,(energy/maxEnergy)*100))+"%";
+  document.getElementById("rank").innerText=getRank();
+
+  const comboText=document.getElementById("comboText");
+  const tapPower=gameState.tapPower||1;
+  comboText.innerText=combo>=4?"🔥 FIRE COMBO x"+combo+" • Tap Power +"+tapPower:"Combo: x"+combo+" • Tap Power +"+tapPower;
+  comboText.classList.toggle("fire",combo>=4);
+
+  if(document.getElementById("taps"))document.getElementById("taps").innerText=taps;
+  if(document.getElementById("energyMini"))document.getElementById("energyMini").innerText=energy+"/"+maxEnergy;
+
+  if(document.getElementById("premiumCoins"))document.getElementById("premiumCoins").innerText=coins;
+  if(document.getElementById("premiumEnergy"))document.getElementById("premiumEnergy").innerText=energy+"/"+maxEnergy;
+  if(document.getElementById("premiumLevel"))document.getElementById("premiumLevel").innerText=level;
+  if(document.getElementById("premiumSeasonProgress")){
+    const seasonTarget=1000;
+    const seasonValue=Math.min(seasonTarget,Math.max(0,Number(xp||0)%seasonTarget));
+    document.getElementById("premiumSeasonProgress").innerText=seasonValue+" / "+seasonTarget;
+    document.getElementById("premiumSeasonFill").style.width=Math.round((seasonValue/seasonTarget)*100)+"%";
+  }
+
+  if(userId)document.getElementById("inviteLink").innerText=getInviteLink();
+  document.getElementById("referralsCount").innerText=referrals;
+  document.getElementById("referralPoints").innerText=referralPoints;
+}
 let pendingTaps=0;
 let tapFlushTimer=null;
 let tapFlushInProgress=false;
@@ -263,7 +359,50 @@ function pulseMascot(){const m=document.getElementById("mascot");m.classList.rem
 function createCoinBurst(e){const card=document.getElementById("gameCard");const rect=card.getBoundingClientRect();const baseX=e.clientX?e.clientX-rect.left:rect.width/2;const baseY=e.clientY?e.clientY-rect.top:160;for(let i=0;i<6;i++){const p=document.createElement("div");p.className="coin-particle";const angle=Math.random()*Math.PI*2;const dist=35+Math.random()*38;p.style.left=baseX+"px";p.style.top=baseY+"px";p.style.setProperty("--dx",Math.cos(angle)*dist+"px");p.style.setProperty("--dy",Math.sin(angle)*dist-45+"px");card.appendChild(p);setTimeout(()=>p.remove(),720)}}
 function createFloat(e,text){const card=document.getElementById("gameCard");const f=document.createElement("div");f.className="float";f.innerText=text;const rect=card.getBoundingClientRect();const x=e.clientX?e.clientX-rect.left:rect.width/2;const y=e.clientY?e.clientY-rect.top:160;f.style.left=x+"px";f.style.top=y+"px";card.appendChild(f);setTimeout(()=>f.remove(),800)}
 const pageIds=["home","tasks","stages","spin","more","invite","gang","leaders","upgrades","box"];const navFor={home:"Home",tasks:"Tasks",stages:"Stages",spin:"Spin",more:"More",invite:"More",gang:"More",leaders:"More",upgrades:"More",box:"Spin"};
-function showPage(p){pageIds.forEach(x=>document.getElementById(x+"Page")?.classList.add("hidden"));["Home","Tasks","Stages","Spin","More"].forEach(x=>document.getElementById("nav"+x).classList.remove("active"));document.getElementById(p+"Page").classList.remove("hidden");document.getElementById("nav"+(navFor[p]||"More")).classList.add("active");document.body.className="page-"+p;if(p==="gang")renderGang();if(p==="tasks")loadTasks();if(p==="leaders")loadLeaderboard();if(p==="stages")renderStages();if(p==="spin")renderSpin();if(p==="box")renderBox();if(p==="upgrades")renderUpgrades()}
+function showPage(p){
+  pageIds.forEach(x=>document.getElementById(x+"Page")?.classList.add("hidden"));
+  ["Home","Tasks","Stages","Spin","More"].forEach(x=>document.getElementById("nav"+x).classList.remove("active"));
+  document.getElementById(p+"Page").classList.remove("hidden");
+  document.getElementById("nav"+(navFor[p]||"More")).classList.add("active");
+  document.body.className="page-"+p;
+
+  if(p==="home")showPremiumHome(false);
+  if(p==="gang")renderGang();
+  if(p==="tasks")loadTasks();
+  if(p==="leaders")loadLeaderboard();
+  if(p==="stages")renderStages();
+  if(p==="spin")renderSpin();
+  if(p==="box")renderBox();
+  if(p==="upgrades")renderUpgrades();
+}
+
+function showPremiumHome(showToast=true){
+  const premium=document.getElementById("premiumHome");
+  const tapShell=document.getElementById("tapGameShell");
+  if(premium)premium.classList.remove("hidden");
+  if(tapShell)tapShell.classList.add("hidden");
+  document.body.classList.remove("home-run");
+  if(showToast)showPopup("Premium Home");
+}
+
+function startDeliveryRun(){
+  const premium=document.getElementById("premiumHome");
+  const tapShell=document.getElementById("tapGameShell");
+  if(premium)premium.classList.add("hidden");
+  if(tapShell)tapShell.classList.remove("hidden");
+  document.body.className="page-home home-run";
+  document.getElementById("navHome").classList.add("active");
+  document.getElementById("status").innerText="Delivery run started. Tap DelayDoge 🐶📦";
+  setFeed("V20 Premium Home active ✅<br>Smooth Tap is ready. Tap fast and the server will save cleanly.");
+  showPopup("Delivery started");
+}
+
+function showPremiumComing(name){
+  const note=document.getElementById("premiumNote");
+  if(note)note.innerText=name+" is being prepared. Late, but legendary.";
+  showPopup(name+" soon");
+}
+
 function setFeed(html){document.getElementById("feed").innerHTML=html}
 function showPopup(t){const p=document.getElementById("popup");p.innerText=t;p.classList.add("show");setTimeout(()=>p.classList.remove("show"),1400)}
 function getInviteLink(){return"https://t.me/DelayDogeGameBot?startapp="+encodeURIComponent(userId||"delaydoge")}
